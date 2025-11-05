@@ -1,0 +1,109 @@
+// File: SavingMoneyApp/app/build.gradle
+// Áp dụng các plugin cần thiết
+plugins {
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+    // Plugin để xử lý annotation: Room và Hilt
+    id 'kotlin-kapt'
+    // Plugin Hilt
+    id 'com.google.dagger.hilt.android'
+}
+
+android {
+    namespace 'com.example.savingmoney'
+    compileSdk rootProject.ext.compile_sdk
+
+    defaultConfig {
+        applicationId 'com.example.savingmoney'
+        minSdk rootProject.ext.min_sdk
+        targetSdk rootProject.ext.target_sdk
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        vectorDrawables {
+            useSupportLibrary true
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    // BỔ SUNG KHỐI NÀY: Đồng nhất phiên bản Java/Kotlin Target
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    // Nâng jvmTarget lên 17 để khớp với JDK 17
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+
+    // Cấu hình Jetpack Compose
+    buildFeatures {
+        compose true
+    }
+
+    composeOptions {
+        kotlinCompilerExtensionVersion rootProject.ext.compose_compiler_version
+    }
+
+    // Đóng gói các file jar cùng kiến trúc với Android
+    packagingOptions {
+        resources {
+            excludes += '/META-INF/{AL2.0,LGPL2.1}'
+        }
+    }
+}
+
+dependencies {
+
+    // --- Core Dependencies ---
+    implementation 'androidx.core:core-ktx:1.12.0'
+    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.6.2'
+
+    // --- Jetpack Compose ---
+    implementation 'androidx.activity:activity-compose:1.8.1'
+    implementation platform('androidx.compose:compose-bom:2023.08.00')
+    implementation 'androidx.compose.ui:ui'
+    implementation 'androidx.compose.ui:ui-graphics'
+    implementation 'androidx.compose.ui:ui-tooling-preview'
+    implementation 'androidx.compose.material3:material3'
+
+    // Compose Navigation
+    implementation 'androidx.navigation:navigation-compose:2.7.5'
+    // Compose ViewModel
+    implementation "androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2"
+
+    // --- Kotlin Coroutines ---
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'
+
+    // --- Room (Database) ---
+    implementation "androidx.room:room-runtime:${rootProject.ext.room_version}"
+    // Kotlin Extensions và Coroutines (cho Flow)
+    implementation "androidx.room:room-ktx:${rootProject.ext.room_version}"
+    // Annotation Processor (KAPT)
+    kapt "androidx.room:room-compiler:${rootProject.ext.room_version}"
+
+    // --- Hilt (Dependency Injection) ---
+    // Hilt Core
+    implementation "com.google.dagger:hilt-android:${rootProject.ext.hilt_version}"
+    // Annotation Processor (KAPT)
+    kapt "com.google.dagger:hilt-compiler:${rootProject.ext.hilt_version}"
+    // Hilt Navigation Compose
+    implementation "androidx.hilt:hilt-navigation-compose:1.1.0"
+
+    // --- Testing ---
+    testImplementation 'junit:junit:4.13.2'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
+    androidTestImplementation platform('androidx.compose:compose-bom:2023.08.00')
+    androidTestImplementation 'androidx.compose.ui:ui-test-junit4'
+    debugImplementation 'androidx.compose.ui:ui-tooling'
+    debugImplementation 'androidx.compose.ui:ui-test-manifest'
+}

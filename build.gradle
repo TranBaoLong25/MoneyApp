@@ -1,0 +1,32 @@
+// Root build.gradle
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+buildscript {
+    ext {
+        // Định nghĩa phiên bản cho các thư viện chính, đã nâng cấp cho tương thích cao
+        compose_compiler_version = '1.5.8'
+        kotlin_version = '1.9.22' // Nâng cấp
+        hilt_version = '2.50' // Nâng cấp
+        room_version = '2.6.1' // Nâng cấp
+
+        // Android SDK Versions
+        compile_sdk = 34
+        min_sdk = 24
+        target_sdk = 34
+    }
+
+    repositories {
+        google()
+        mavenCentral()
+    }
+
+    dependencies {
+        // Plugin Android Gradle - Nâng cấp để tương thích với Gradle 9.2.0
+        classpath 'com.android.tools.build:gradle:8.3.0'
+
+        // Plugin Kotlin
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+
+        // Plugin Hilt
+        classpath "com.google.dagger:hilt-android-gradle-plugin:$hilt_version"
+    }
+}

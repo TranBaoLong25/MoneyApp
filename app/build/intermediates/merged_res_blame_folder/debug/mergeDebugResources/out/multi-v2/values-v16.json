@@ -4,7 +4,7 @@
             "outputFile": "com.example.savingmoney.app-mergeDebugResources-56:/values-v16/values-v16.xml",
             "map": [
                 {
-                    "source": "C:\\Users\\Admin\\.gradle\\caches\\transforms-3\\999111953fb3fe3f450ed1d5e57e1ef5\\transformed\\core-1.12.0\\res\\values-v16\\values-v16.xml",
+                    "source": "C:\\Users\\DELL\\.gradle\\caches\\transforms-3\\999111953fb3fe3f450ed1d5e57e1ef5\\transformed\\core-1.12.0\\res\\values-v16\\values-v16.xml",
                     "from": {
                         "startLines": "2",
                         "startColumns": "4",

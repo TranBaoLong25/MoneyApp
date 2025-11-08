@@ -7,6 +7,9 @@ import androidx.navigation.compose.composable
 import com.example.savingmoney.ui.auth.LoginScreen
 import com.example.savingmoney.ui.auth.RegisterScreen
 import com.example.savingmoney.ui.home.HomeScreen
+import com.example.savingmoney.ui.stats.StatsScreen // THÊM IMPORT
+import com.example.savingmoney.ui.settings.SettingsScreen // THÊM IMPORT
+import com.example.savingmoney.ui.transaction.AddTransactionScreen // THÊM IMPORT
 
 @Composable
 fun NavGraph(
@@ -60,6 +63,19 @@ fun NavGraph(
             HomeScreen()
         }
 
-        // TODO: THÊM CÁC COMPOSABLE CỦA STATS, SETTINGS VÀ TRANSACTION
+        // THÊM COMPOSABLE CỦA STATS (REPORT)
+        composable(Destinations.Stats.route) {
+            StatsScreen()
+        }
+
+        // THÊM COMPOSABLE CỦA ADD TRANSACTION
+        composable(Destinations.AddTransaction.route) {
+            AddTransactionScreen()
+        }
+
+        // THÊM COMPOSABLE CỦA SETTINGS
+        composable(Destinations.Settings.route) {
+            SettingsScreen()
+        }
     }
 }

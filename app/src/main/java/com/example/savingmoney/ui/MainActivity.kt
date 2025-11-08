@@ -14,7 +14,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.savingmoney.ui.auth.AuthViewModel
 import com.example.savingmoney.ui.navigation.Destinations
 import com.example.savingmoney.ui.navigation.NavGraph
-import com.example.savingmoney.ui.theme.SavingMoneyTheme // Giả định tên Theme của bạn
+import com.example.savingmoney.ui.theme.SavingMoneyTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -30,16 +30,20 @@ class MainActivity : ComponentActivity() {
                 ) {
                     val navController = rememberNavController()
 
-                    // Lấy ViewModel qua Hilt
+                    // Khối logic này không cần thiết khi test màn hình cụ thể
                     val authViewModel: AuthViewModel = hiltViewModel()
                     val authState by authViewModel.uiState.collectAsState()
 
-                    // SỬA: Khối if/else xác định giá trị cho startDestination
-                    val startDestination = if (authState.isAuthenticated) {
-                        Destinations.Home.route
-                    } else {
-                        Destinations.Login.route
-                    }
+                    // SỬA TẠM THỜI ĐỂ CHẠY MÀN HÌNH STATS
+                    // Dòng cũ:
+                    // val startDestination = if (authState.isAuthenticated) {
+                    //     Destinations.Home.route
+                    // } else {
+                    //     Destinations.Login.route
+                    // }
+
+                    // Dòng MỚI để chạy thẳng vào StatsScreen
+                    val startDestination = Destinations.Stats.route
 
                     // Khởi chạy NavGraph
                     NavGraph(navController = navController, startDestination = startDestination)

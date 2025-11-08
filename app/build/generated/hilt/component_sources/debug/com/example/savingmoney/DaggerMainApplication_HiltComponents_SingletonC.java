@@ -14,6 +14,7 @@ import com.example.savingmoney.di.AppModule_ProvideDatabaseFactory;
 import com.example.savingmoney.di.AppModule_ProvideUserDaoFactory;
 import com.example.savingmoney.di.RepositoryModule_ProvideUserRepositoryFactory;
 import com.example.savingmoney.di.UseCaseModule_ProvideAuthUseCaseFactory;
+import com.example.savingmoney.di.UseCaseModule_ProvideGetMonthlySummaryUseCaseFactory;
 import com.example.savingmoney.domain.usecase.AuthUseCase;
 import com.example.savingmoney.ui.MainActivity;
 import com.example.savingmoney.ui.auth.AuthViewModel;
@@ -480,7 +481,7 @@ public final class DaggerMainApplication_HiltComponents_SingletonC {
           return (T) new SettingsViewModel();
 
           case 3: // com.example.savingmoney.ui.stats.StatsViewModel 
-          return (T) new StatsViewModel();
+          return (T) new StatsViewModel(UseCaseModule_ProvideGetMonthlySummaryUseCaseFactory.provideGetMonthlySummaryUseCase());
 
           case 4: // com.example.savingmoney.ui.transaction.TransactionViewModel 
           return (T) new TransactionViewModel();

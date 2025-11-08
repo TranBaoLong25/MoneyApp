@@ -1,10 +1,12 @@
 package com.example.savingmoney.ui.stats;
 
+import com.example.savingmoney.domain.usecase.GetMonthlySummaryUseCase;
 import dagger.internal.DaggerGenerated;
 import dagger.internal.Factory;
 import dagger.internal.QualifierMetadata;
 import dagger.internal.ScopeMetadata;
 import javax.annotation.processing.Generated;
+import javax.inject.Provider;
 
 @ScopeMetadata
 @QualifierMetadata
@@ -20,20 +22,24 @@ import javax.annotation.processing.Generated;
     "KotlinInternalInJava"
 })
 public final class StatsViewModel_Factory implements Factory<StatsViewModel> {
+  private final Provider<GetMonthlySummaryUseCase> getMonthlySummaryUseCaseProvider;
+
+  public StatsViewModel_Factory(
+      Provider<GetMonthlySummaryUseCase> getMonthlySummaryUseCaseProvider) {
+    this.getMonthlySummaryUseCaseProvider = getMonthlySummaryUseCaseProvider;
+  }
+
   @Override
   public StatsViewModel get() {
-    return newInstance();
+    return newInstance(getMonthlySummaryUseCaseProvider.get());
   }
 
-  public static StatsViewModel_Factory create() {
-    return InstanceHolder.INSTANCE;
+  public static StatsViewModel_Factory create(
+      Provider<GetMonthlySummaryUseCase> getMonthlySummaryUseCaseProvider) {
+    return new StatsViewModel_Factory(getMonthlySummaryUseCaseProvider);
   }
 
-  public static StatsViewModel newInstance() {
-    return new StatsViewModel();
-  }
-
-  private static final class InstanceHolder {
-    private static final StatsViewModel_Factory INSTANCE = new StatsViewModel_Factory();
+  public static StatsViewModel newInstance(GetMonthlySummaryUseCase getMonthlySummaryUseCase) {
+    return new StatsViewModel(getMonthlySummaryUseCase);
   }
 }

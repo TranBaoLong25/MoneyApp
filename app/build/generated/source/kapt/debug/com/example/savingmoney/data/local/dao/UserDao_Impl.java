@@ -131,6 +131,54 @@ public final class UserDao_Impl implements UserDao {
     }, $completion);
   }
 
+  @Override
+  public Object getUserById(final long userId, final Continuation<? super User> $completion) {
+    final String _sql = "SELECT * FROM user WHERE id = ?";
+    final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 1);
+    int _argIndex = 1;
+    _statement.bindLong(_argIndex, userId);
+    final CancellationSignal _cancellationSignal = DBUtil.createCancellationSignal();
+    return CoroutinesRoom.execute(__db, false, _cancellationSignal, new Callable<User>() {
+      @Override
+      @Nullable
+      public User call() throws Exception {
+        final Cursor _cursor = DBUtil.query(__db, _statement, false, null);
+        try {
+          final int _cursorIndexOfId = CursorUtil.getColumnIndexOrThrow(_cursor, "id");
+          final int _cursorIndexOfName = CursorUtil.getColumnIndexOrThrow(_cursor, "name");
+          final int _cursorIndexOfPasswordHash = CursorUtil.getColumnIndexOrThrow(_cursor, "passwordHash");
+          final int _cursorIndexOfBalance = CursorUtil.getColumnIndexOrThrow(_cursor, "balance");
+          final User _result;
+          if (_cursor.moveToFirst()) {
+            final long _tmpId;
+            _tmpId = _cursor.getLong(_cursorIndexOfId);
+            final String _tmpName;
+            if (_cursor.isNull(_cursorIndexOfName)) {
+              _tmpName = null;
+            } else {
+              _tmpName = _cursor.getString(_cursorIndexOfName);
+            }
+            final String _tmpPasswordHash;
+            if (_cursor.isNull(_cursorIndexOfPasswordHash)) {
+              _tmpPasswordHash = null;
+            } else {
+              _tmpPasswordHash = _cursor.getString(_cursorIndexOfPasswordHash);
+            }
+            final double _tmpBalance;
+            _tmpBalance = _cursor.getDouble(_cursorIndexOfBalance);
+            _result = new User(_tmpId,_tmpName,_tmpPasswordHash,_tmpBalance);
+          } else {
+            _result = null;
+          }
+          return _result;
+        } finally {
+          _cursor.close();
+          _statement.release();
+        }
+      }
+    }, $completion);
+  }
+
   @NonNull
   public static List<Class<?>> getRequiredConverters() {
     return Collections.emptyList();

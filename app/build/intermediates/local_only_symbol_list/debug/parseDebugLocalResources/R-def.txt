@@ -1,5 +1,6 @@
 R_DEF: Internal format may change without notice
 local
+color app_background
 color black
 color white
 string app_name

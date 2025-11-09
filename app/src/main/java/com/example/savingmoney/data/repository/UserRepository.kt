@@ -15,7 +15,9 @@ class UserRepository @Inject constructor(
     suspend fun registerUser(user: User): Long {
         return userDao.insertUser(user)
     }
-
+    suspend fun getUserById(userId: Long): User? {
+        return userDao.getUserById(userId)
+    }
     // Lấy thông tin người dùng dựa trên username
     suspend fun getUserByUsername(username: String): User? {
         return userDao.getUserByUsername(username)

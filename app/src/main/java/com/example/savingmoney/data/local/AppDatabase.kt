@@ -11,7 +11,7 @@ import com.example.savingmoney.data.model.User
 
 @Database(
     entities = [User::class, Transaction::class, Category::class],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

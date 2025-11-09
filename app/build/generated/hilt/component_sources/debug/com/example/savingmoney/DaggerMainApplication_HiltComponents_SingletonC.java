@@ -6,7 +6,18 @@ import android.view.View;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.SavedStateHandle;
 import androidx.lifecycle.ViewModel;
+import com.example.savingmoney.data.local.AppDatabase;
+import com.example.savingmoney.data.local.dao.TransactionDao;
+import com.example.savingmoney.data.local.dao.UserDao;
+import com.example.savingmoney.data.preferences.UserPreferences;
+import com.example.savingmoney.data.repository.TransactionRepository;
+import com.example.savingmoney.data.repository.UserRepository;
 import com.example.savingmoney.di.AppModule_ProvideFirebaseAuthFactory;
+import com.example.savingmoney.di.DatabaseModule_ProvideDatabaseFactory;
+import com.example.savingmoney.di.DatabaseModule_ProvideTransactionDaoFactory;
+import com.example.savingmoney.di.DatabaseModule_ProvideUserDaoFactory;
+import com.example.savingmoney.di.RepositoryModule_ProvideTransactionRepositoryFactory;
+import com.example.savingmoney.di.RepositoryModule_ProvideUserRepositoryFactory;
 import com.example.savingmoney.di.UseCaseModule_ProvideGetMonthlySummaryUseCaseFactory;
 import com.example.savingmoney.ui.MainActivity;
 import com.example.savingmoney.ui.auth.AuthViewModel;
@@ -34,6 +45,7 @@ import dagger.hilt.android.internal.lifecycle.DefaultViewModelFactories_Internal
 import dagger.hilt.android.internal.managers.ActivityRetainedComponentManager_LifecycleModule_ProvideActivityRetainedLifecycleFactory;
 import dagger.hilt.android.internal.managers.SavedStateHandleHolder;
 import dagger.hilt.android.internal.modules.ApplicationContextModule;
+import dagger.hilt.android.internal.modules.ApplicationContextModule_ProvideContextFactory;
 import dagger.internal.DaggerGenerated;
 import dagger.internal.DoubleCheck;
 import dagger.internal.MapBuilder;
@@ -64,25 +76,20 @@ public final class DaggerMainApplication_HiltComponents_SingletonC {
     return new Builder();
   }
 
-  public static MainApplication_HiltComponents.SingletonC create() {
-    return new Builder().build();
-  }
-
   public static final class Builder {
+    private ApplicationContextModule applicationContextModule;
+
     private Builder() {
     }
 
-    /**
-     * @deprecated This module is declared, but an instance is not used in the component. This method is a no-op. For more, see https://dagger.dev/unused-modules.
-     */
-    @Deprecated
     public Builder applicationContextModule(ApplicationContextModule applicationContextModule) {
-      Preconditions.checkNotNull(applicationContextModule);
+      this.applicationContextModule = Preconditions.checkNotNull(applicationContextModule);
       return this;
     }
 
     public MainApplication_HiltComponents.SingletonC build() {
-      return new SingletonCImpl();
+      Preconditions.checkBuilderRequirement(applicationContextModule, ApplicationContextModule.class);
+      return new SingletonCImpl(applicationContextModule);
     }
   }
 
@@ -469,10 +476,10 @@ public final class DaggerMainApplication_HiltComponents_SingletonC {
       public T get() {
         switch (id) {
           case 0: // com.example.savingmoney.ui.auth.AuthViewModel 
-          return (T) new AuthViewModel(singletonCImpl.provideFirebaseAuthProvider.get());
+          return (T) new AuthViewModel(singletonCImpl.provideFirebaseAuthProvider.get(), singletonCImpl.provideUserRepositoryProvider.get());
 
           case 1: // com.example.savingmoney.ui.home.HomeViewModel 
-          return (T) new HomeViewModel();
+          return (T) new HomeViewModel(singletonCImpl.provideTransactionRepositoryProvider.get(), singletonCImpl.provideUserRepositoryProvider.get());
 
           case 2: // com.example.savingmoney.ui.settings.SettingsViewModel 
           return (T) new SettingsViewModel();
@@ -559,19 +566,41 @@ public final class DaggerMainApplication_HiltComponents_SingletonC {
   }
 
   private static final class SingletonCImpl extends MainApplication_HiltComponents.SingletonC {
+    private final ApplicationContextModule applicationContextModule;
+
     private final SingletonCImpl singletonCImpl = this;
 
     private Provider<FirebaseAuth> provideFirebaseAuthProvider;
 
-    private SingletonCImpl() {
+    private Provider<AppDatabase> provideDatabaseProvider;
 
-      initialize();
+    private Provider<UserPreferences> userPreferencesProvider;
+
+    private Provider<UserRepository> provideUserRepositoryProvider;
+
+    private Provider<TransactionRepository> provideTransactionRepositoryProvider;
+
+    private SingletonCImpl(ApplicationContextModule applicationContextModuleParam) {
+      this.applicationContextModule = applicationContextModuleParam;
+      initialize(applicationContextModuleParam);
 
     }
 
+    private UserDao userDao() {
+      return DatabaseModule_ProvideUserDaoFactory.provideUserDao(provideDatabaseProvider.get());
+    }
+
+    private TransactionDao transactionDao() {
+      return DatabaseModule_ProvideTransactionDaoFactory.provideTransactionDao(provideDatabaseProvider.get());
+    }
+
     @SuppressWarnings("unchecked")
-    private void initialize() {
+    private void initialize(final ApplicationContextModule applicationContextModuleParam) {
       this.provideFirebaseAuthProvider = DoubleCheck.provider(new SwitchingProvider<FirebaseAuth>(singletonCImpl, 0));
+      this.provideDatabaseProvider = DoubleCheck.provider(new SwitchingProvider<AppDatabase>(singletonCImpl, 2));
+      this.userPreferencesProvider = DoubleCheck.provider(new SwitchingProvider<UserPreferences>(singletonCImpl, 3));
+      this.provideUserRepositoryProvider = DoubleCheck.provider(new SwitchingProvider<UserRepository>(singletonCImpl, 1));
+      this.provideTransactionRepositoryProvider = DoubleCheck.provider(new SwitchingProvider<TransactionRepository>(singletonCImpl, 4));
     }
 
     @Override
@@ -609,6 +638,18 @@ public final class DaggerMainApplication_HiltComponents_SingletonC {
         switch (id) {
           case 0: // com.google.firebase.auth.FirebaseAuth 
           return (T) AppModule_ProvideFirebaseAuthFactory.provideFirebaseAuth();
+
+          case 1: // com.example.savingmoney.data.repository.UserRepository 
+          return (T) RepositoryModule_ProvideUserRepositoryFactory.provideUserRepository(singletonCImpl.userDao(), singletonCImpl.userPreferencesProvider.get());
+
+          case 2: // com.example.savingmoney.data.local.AppDatabase 
+          return (T) DatabaseModule_ProvideDatabaseFactory.provideDatabase(ApplicationContextModule_ProvideContextFactory.provideContext(singletonCImpl.applicationContextModule));
+
+          case 3: // com.example.savingmoney.data.preferences.UserPreferences 
+          return (T) new UserPreferences(ApplicationContextModule_ProvideContextFactory.provideContext(singletonCImpl.applicationContextModule));
+
+          case 4: // com.example.savingmoney.data.repository.TransactionRepository 
+          return (T) RepositoryModule_ProvideTransactionRepositoryFactory.provideTransactionRepository(singletonCImpl.transactionDao(), singletonCImpl.provideUserRepositoryProvider.get());
 
           default: throw new AssertionError(id);
         }

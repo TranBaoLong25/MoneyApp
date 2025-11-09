@@ -1,6 +1,7 @@
 package com.example.savingmoney;
 
 import com.example.savingmoney.di.AppModule;
+import com.example.savingmoney.di.DatabaseModule;
 import com.example.savingmoney.di.RepositoryModule;
 import com.example.savingmoney.di.UseCaseModule;
 import com.example.savingmoney.ui.MainActivity_GeneratedInjector;
@@ -135,6 +136,7 @@ public final class MainApplication_HiltComponents {
       modules = {
           AppModule.class,
           ApplicationContextModule.class,
+          DatabaseModule.class,
           HiltWrapper_FragmentGetContextFix_FragmentGetContextFixModule.class,
           ActivityRetainedCBuilderModule.class,
           ServiceCBuilderModule.class,

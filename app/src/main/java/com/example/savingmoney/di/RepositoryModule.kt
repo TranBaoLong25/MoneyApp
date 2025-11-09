@@ -1,7 +1,9 @@
 package com.example.savingmoney.di
 
+import com.example.savingmoney.data.local.dao.TransactionDao
 import com.example.savingmoney.data.local.dao.UserDao
 import com.example.savingmoney.data.preferences.UserPreferences
+import com.example.savingmoney.data.repository.TransactionRepository
 import com.example.savingmoney.data.repository.UserRepository
 import dagger.Module
 import dagger.Provides
@@ -19,6 +21,10 @@ object RepositoryModule {
     fun provideUserRepository(userDao: UserDao, userPreferences: UserPreferences): UserRepository {
         return UserRepository(userDao, userPreferences)
     }
-
+    @Provides
+    @Singleton
+    fun provideTransactionRepository(transactionDao: TransactionDao, userRepository: UserRepository): TransactionRepository {
+        return TransactionRepository(transactionDao, userRepository)
+    }
     // TODO: Cung cấp TransactionRepository và CategoryRepository
 }

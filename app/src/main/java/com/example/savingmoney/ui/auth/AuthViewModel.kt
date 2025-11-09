@@ -7,6 +7,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import javax.inject.Inject
+import com.example.savingmoney.data.repository.UserRepository
 
 // Trạng thái UI
 data class AuthUiState(
@@ -18,7 +19,8 @@ data class AuthUiState(
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
-    private val auth: FirebaseAuth
+    private val auth: FirebaseAuth, // ⭐️ ĐÃ THÊM DẤU PHẨY
+    private val userRepository: UserRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AuthUiState())
@@ -97,6 +99,7 @@ class AuthViewModel @Inject constructor(
     // --- Đăng xuất ---
     fun signOut() {
         auth.signOut()
+        userRepository.logout()
         _uiState.value = AuthUiState()
     }
 }

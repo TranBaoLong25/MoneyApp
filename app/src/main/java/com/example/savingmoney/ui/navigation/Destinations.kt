@@ -8,4 +8,6 @@ object Destinations {
     const val Stats = "stats"
     const val AddTransaction = "add_transaction"
     const val Settings = "settings"
+    const val TransactionList = "transaction_list"
+    const val Planning = "planning"
 }

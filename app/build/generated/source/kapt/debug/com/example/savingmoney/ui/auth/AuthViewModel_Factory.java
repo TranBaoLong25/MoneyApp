@@ -1,6 +1,6 @@
 package com.example.savingmoney.ui.auth;
 
-import com.example.savingmoney.domain.usecase.AuthUseCase;
+import com.google.firebase.auth.FirebaseAuth;
 import dagger.internal.DaggerGenerated;
 import dagger.internal.Factory;
 import dagger.internal.QualifierMetadata;
@@ -22,22 +22,22 @@ import javax.inject.Provider;
     "KotlinInternalInJava"
 })
 public final class AuthViewModel_Factory implements Factory<AuthViewModel> {
-  private final Provider<AuthUseCase> authUseCaseProvider;
+  private final Provider<FirebaseAuth> authProvider;
 
-  public AuthViewModel_Factory(Provider<AuthUseCase> authUseCaseProvider) {
-    this.authUseCaseProvider = authUseCaseProvider;
+  public AuthViewModel_Factory(Provider<FirebaseAuth> authProvider) {
+    this.authProvider = authProvider;
   }
 
   @Override
   public AuthViewModel get() {
-    return newInstance(authUseCaseProvider.get());
+    return newInstance(authProvider.get());
   }
 
-  public static AuthViewModel_Factory create(Provider<AuthUseCase> authUseCaseProvider) {
-    return new AuthViewModel_Factory(authUseCaseProvider);
+  public static AuthViewModel_Factory create(Provider<FirebaseAuth> authProvider) {
+    return new AuthViewModel_Factory(authProvider);
   }
 
-  public static AuthViewModel newInstance(AuthUseCase authUseCase) {
-    return new AuthViewModel(authUseCase);
+  public static AuthViewModel newInstance(FirebaseAuth auth) {
+    return new AuthViewModel(auth);
   }
 }

@@ -1,1 +1,7 @@
-<?xml version="1.0" encoding="utf-8"?><resources><string name="app_name">SavingMoneyApp</string></resources>
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">SavingMoneyApp</string>
+    <string name="default_web_client_id">
+        714995779967-1bvmsavo376e1u5sq1q4u8rg2rt68as1.apps.googleusercontent.com
+    </string>
+</resources>

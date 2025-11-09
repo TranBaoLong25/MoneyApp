@@ -6,76 +6,74 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.savingmoney.ui.auth.LoginScreen
 import com.example.savingmoney.ui.auth.RegisterScreen
+import com.example.savingmoney.ui.auth.WelcomeScreen
 import com.example.savingmoney.ui.home.HomeScreen
-import com.example.savingmoney.ui.stats.StatsScreen // THÊM IMPORT
-import com.example.savingmoney.ui.settings.SettingsScreen // THÊM IMPORT
-import com.example.savingmoney.ui.transaction.AddTransactionScreen // THÊM IMPORT
 
 @Composable
 fun NavGraph(
     navController: NavHostController,
-    startDestination: String // ĐÃ THÊM THAM SỐ NÀY
+    startDestination: String
 ) {
+    NavHost(
+        navController = navController,
+        startDestination = startDestination
+    ) {
 
-    // NavHost SẼ SỬ DỤNG THAM SỐ startDestination được truyền từ MainActivity
-    NavHost(navController = navController, startDestination = startDestination) {
-
-        // --- AUTH FLOW ---
-
-        // Màn hình Welcome (Tạm thời chuyển hướng ngay)
-        composable(Destinations.Welcome.route) {
-            navController.navigate(Destinations.Login.route) {
-                popUpTo(Destinations.Welcome.route) { inclusive = true }
-            }
-        }
-
-        composable(Destinations.Login.route) {
-            LoginScreen(
+        // Welcome Screen
+        composable(Destinations.Welcome) {
+            WelcomeScreen(
                 onNavigateToHome = {
-                    navController.navigate(Destinations.Home.route) {
-                        popUpTo(Destinations.Login.route) { inclusive = true }
+                    navController.navigate(Destinations.Home) {
+                        popUpTo(Destinations.Welcome) { inclusive = true }
                     }
                 },
                 onNavigateToRegister = {
-                    navController.navigate(Destinations.Register.route)
+                    navController.navigate(Destinations.Register)
+                },
+                onNavigateToLogin = {
+                    navController.navigate(Destinations.Login)
                 }
             )
         }
 
-        composable(Destinations.Register.route) {
+        // Login Screen
+        composable(Destinations.Login) {
+            LoginScreen(
+                onNavigateToHome = {
+                    navController.navigate(Destinations.Home) {
+                        popUpTo(Destinations.Login) { inclusive = true }
+                    }
+                },
+                onNavigateToRegister = {
+                    navController.navigate(Destinations.Register)
+                }
+            )
+        }
+
+        // Register Screen
+        composable(Destinations.Register) {
             RegisterScreen(
                 onNavigateToHome = {
-                    navController.navigate(Destinations.Home.route) {
-                        popUpTo(Destinations.Register.route) { inclusive = true }
+                    navController.navigate(Destinations.Home) {
+                        popUpTo(Destinations.Register) { inclusive = true }
                     }
                 },
                 onNavigateToLogin = {
-                    navController.navigate(Destinations.Login.route) {
-                        popUpTo(Destinations.Register.route) { inclusive = true }
+                    navController.navigate(Destinations.Login)
+                }
+            )
+        }
+
+        // NavGraph.kt
+        composable(Destinations.Home) {
+            HomeScreen(
+                onLogout = {
+                    navController.navigate(Destinations.Login) {
+                        popUpTo(Destinations.Home) { inclusive = true }
                     }
                 }
             )
         }
 
-        // --- MAIN APP FLOW ---
-
-        composable(Destinations.Home.route) {
-            HomeScreen()
-        }
-
-        // THÊM COMPOSABLE CỦA STATS (REPORT)
-        composable(Destinations.Stats.route) {
-            StatsScreen()
-        }
-
-        // THÊM COMPOSABLE CỦA ADD TRANSACTION
-        composable(Destinations.AddTransaction.route) {
-            AddTransactionScreen()
-        }
-
-        // THÊM COMPOSABLE CỦA SETTINGS
-        composable(Destinations.Settings.route) {
-            SettingsScreen()
-        }
     }
 }

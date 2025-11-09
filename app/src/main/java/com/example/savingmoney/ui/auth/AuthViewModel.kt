@@ -1,79 +1,102 @@
 package com.example.savingmoney.ui.auth
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import com.example.savingmoney.domain.usecase.AuthUseCase
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.GoogleAuthProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-// Trạng thái UI cho màn hình Auth
+// Trạng thái UI
 data class AuthUiState(
     val isLoading: Boolean = false,
-    val error: String? = null,
     val isAuthenticated: Boolean = false,
-    val username: String = "",
-    val passwordInput: String = ""
+    val isRegistered: Boolean = false,
+    val error: String? = null
 )
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
-    private val authUseCase: AuthUseCase
+    private val auth: FirebaseAuth
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(AuthUiState(
-        isAuthenticated = authUseCase.isLoggedIn() // Kiểm tra trạng thái ban đầu
-    ))
+    private val _uiState = MutableStateFlow(AuthUiState())
     val uiState: StateFlow<AuthUiState> = _uiState
 
-    fun updateUsername(newUsername: String) {
-        _uiState.value = _uiState.value.copy(username = newUsername, error = null)
-    }
-
-    fun updatePassword(newPassword: String) {
-        _uiState.value = _uiState.value.copy(passwordInput = newPassword, error = null)
-    }
-
-    // Hàm Đăng ký
-    fun register() {
-        _uiState.value = _uiState.value.copy(isLoading = true, error = null)
-        viewModelScope.launch {
-            val username = _uiState.value.username
-            val password = _uiState.value.passwordInput
-
-            // NOTE: Trong thực tế, cần mã hóa mật khẩu trước khi truyền vào UseCase
-            val result = authUseCase.register(username, passwordHash = password)
-
-            result.onSuccess {
-                _uiState.value = _uiState.value.copy(isAuthenticated = true, isLoading = false)
-            }.onFailure { e ->
-                _uiState.value = _uiState.value.copy(error = e.message, isLoading = false)
-            }
+    init {
+        if (auth.currentUser != null) {
+            _uiState.value = AuthUiState(isAuthenticated = true)
         }
     }
 
-    // Hàm Đăng nhập
-    fun login() {
+    // --- Đăng ký Email/Password ---
+    fun signUpWithEmail(email: String, password: String) {
         _uiState.value = _uiState.value.copy(isLoading = true, error = null)
-        viewModelScope.launch {
-            val username = _uiState.value.username
-            val password = _uiState.value.passwordInput
-
-            // NOTE: Mật khẩu so sánh cần phải được mã hóa/hash giống như lúc lưu trữ
-            val result = authUseCase.login(username, passwordHash = password)
-
-            result.onSuccess {
-                _uiState.value = _uiState.value.copy(isAuthenticated = true, isLoading = false)
-            }.onFailure { e ->
-                _uiState.value = _uiState.value.copy(error = e.message, isLoading = false)
+        auth.createUserWithEmailAndPassword(email, password)
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        isRegistered = true,
+                        error = null
+                    )
+                } else {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        isRegistered = false,
+                        error = task.exception?.localizedMessage ?: "Đăng ký thất bại"
+                    )
+                }
             }
-        }
     }
 
-    fun logout() {
-        authUseCase.logout()
-        _uiState.value = AuthUiState(isAuthenticated = false)
+    // --- Đăng nhập Email/Password ---
+    fun signInWithEmail(email: String, password: String) {
+        _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+        auth.signInWithEmailAndPassword(email, password)
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        isAuthenticated = true,
+                        error = null
+                    )
+                } else {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        isAuthenticated = false,
+                        error = task.exception?.localizedMessage ?: "Đăng nhập thất bại"
+                    )
+                }
+            }
+    }
+
+    // --- Đăng nhập Google ---
+    fun signInWithGoogle(idToken: String) {
+        val credential = GoogleAuthProvider.getCredential(idToken, null)
+        _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+        auth.signInWithCredential(credential)
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        isAuthenticated = true,
+                        error = null
+                    )
+                } else {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        isAuthenticated = false,
+                        error = task.exception?.localizedMessage ?: "Đăng nhập Google thất bại"
+                    )
+                }
+            }
+    }
+
+    // --- Đăng xuất ---
+    fun signOut() {
+        auth.signOut()
+        _uiState.value = AuthUiState()
     }
 }

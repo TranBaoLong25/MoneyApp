@@ -6,16 +6,8 @@ import android.view.View;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.SavedStateHandle;
 import androidx.lifecycle.ViewModel;
-import com.example.savingmoney.data.local.AppDatabase;
-import com.example.savingmoney.data.local.dao.UserDao;
-import com.example.savingmoney.data.preferences.UserPreferences;
-import com.example.savingmoney.data.repository.UserRepository;
-import com.example.savingmoney.di.AppModule_ProvideDatabaseFactory;
-import com.example.savingmoney.di.AppModule_ProvideUserDaoFactory;
-import com.example.savingmoney.di.RepositoryModule_ProvideUserRepositoryFactory;
-import com.example.savingmoney.di.UseCaseModule_ProvideAuthUseCaseFactory;
+import com.example.savingmoney.di.AppModule_ProvideFirebaseAuthFactory;
 import com.example.savingmoney.di.UseCaseModule_ProvideGetMonthlySummaryUseCaseFactory;
-import com.example.savingmoney.domain.usecase.AuthUseCase;
 import com.example.savingmoney.ui.MainActivity;
 import com.example.savingmoney.ui.auth.AuthViewModel;
 import com.example.savingmoney.ui.auth.AuthViewModel_HiltModules_KeyModule_ProvideFactory;
@@ -27,6 +19,7 @@ import com.example.savingmoney.ui.stats.StatsViewModel;
 import com.example.savingmoney.ui.stats.StatsViewModel_HiltModules_KeyModule_ProvideFactory;
 import com.example.savingmoney.ui.transaction.TransactionViewModel;
 import com.example.savingmoney.ui.transaction.TransactionViewModel_HiltModules_KeyModule_ProvideFactory;
+import com.google.firebase.auth.FirebaseAuth;
 import dagger.hilt.android.ActivityRetainedLifecycle;
 import dagger.hilt.android.ViewModelLifecycle;
 import dagger.hilt.android.internal.builders.ActivityComponentBuilder;
@@ -41,7 +34,6 @@ import dagger.hilt.android.internal.lifecycle.DefaultViewModelFactories_Internal
 import dagger.hilt.android.internal.managers.ActivityRetainedComponentManager_LifecycleModule_ProvideActivityRetainedLifecycleFactory;
 import dagger.hilt.android.internal.managers.SavedStateHandleHolder;
 import dagger.hilt.android.internal.modules.ApplicationContextModule;
-import dagger.hilt.android.internal.modules.ApplicationContextModule_ProvideContextFactory;
 import dagger.internal.DaggerGenerated;
 import dagger.internal.DoubleCheck;
 import dagger.internal.MapBuilder;
@@ -72,20 +64,25 @@ public final class DaggerMainApplication_HiltComponents_SingletonC {
     return new Builder();
   }
 
-  public static final class Builder {
-    private ApplicationContextModule applicationContextModule;
+  public static MainApplication_HiltComponents.SingletonC create() {
+    return new Builder().build();
+  }
 
+  public static final class Builder {
     private Builder() {
     }
 
+    /**
+     * @deprecated This module is declared, but an instance is not used in the component. This method is a no-op. For more, see https://dagger.dev/unused-modules.
+     */
+    @Deprecated
     public Builder applicationContextModule(ApplicationContextModule applicationContextModule) {
-      this.applicationContextModule = Preconditions.checkNotNull(applicationContextModule);
+      Preconditions.checkNotNull(applicationContextModule);
       return this;
     }
 
     public MainApplication_HiltComponents.SingletonC build() {
-      Preconditions.checkBuilderRequirement(applicationContextModule, ApplicationContextModule.class);
-      return new SingletonCImpl(applicationContextModule);
+      return new SingletonCImpl();
     }
   }
 
@@ -472,7 +469,7 @@ public final class DaggerMainApplication_HiltComponents_SingletonC {
       public T get() {
         switch (id) {
           case 0: // com.example.savingmoney.ui.auth.AuthViewModel 
-          return (T) new AuthViewModel(singletonCImpl.provideAuthUseCaseProvider.get());
+          return (T) new AuthViewModel(singletonCImpl.provideFirebaseAuthProvider.get());
 
           case 1: // com.example.savingmoney.ui.home.HomeViewModel 
           return (T) new HomeViewModel();
@@ -562,34 +559,19 @@ public final class DaggerMainApplication_HiltComponents_SingletonC {
   }
 
   private static final class SingletonCImpl extends MainApplication_HiltComponents.SingletonC {
-    private final ApplicationContextModule applicationContextModule;
-
     private final SingletonCImpl singletonCImpl = this;
 
-    private Provider<AppDatabase> provideDatabaseProvider;
+    private Provider<FirebaseAuth> provideFirebaseAuthProvider;
 
-    private Provider<UserPreferences> userPreferencesProvider;
+    private SingletonCImpl() {
 
-    private Provider<UserRepository> provideUserRepositoryProvider;
+      initialize();
 
-    private Provider<AuthUseCase> provideAuthUseCaseProvider;
-
-    private SingletonCImpl(ApplicationContextModule applicationContextModuleParam) {
-      this.applicationContextModule = applicationContextModuleParam;
-      initialize(applicationContextModuleParam);
-
-    }
-
-    private UserDao userDao() {
-      return AppModule_ProvideUserDaoFactory.provideUserDao(provideDatabaseProvider.get());
     }
 
     @SuppressWarnings("unchecked")
-    private void initialize(final ApplicationContextModule applicationContextModuleParam) {
-      this.provideDatabaseProvider = DoubleCheck.provider(new SwitchingProvider<AppDatabase>(singletonCImpl, 2));
-      this.userPreferencesProvider = DoubleCheck.provider(new SwitchingProvider<UserPreferences>(singletonCImpl, 3));
-      this.provideUserRepositoryProvider = DoubleCheck.provider(new SwitchingProvider<UserRepository>(singletonCImpl, 1));
-      this.provideAuthUseCaseProvider = DoubleCheck.provider(new SwitchingProvider<AuthUseCase>(singletonCImpl, 0));
+    private void initialize() {
+      this.provideFirebaseAuthProvider = DoubleCheck.provider(new SwitchingProvider<FirebaseAuth>(singletonCImpl, 0));
     }
 
     @Override
@@ -625,17 +607,8 @@ public final class DaggerMainApplication_HiltComponents_SingletonC {
       @Override
       public T get() {
         switch (id) {
-          case 0: // com.example.savingmoney.domain.usecase.AuthUseCase 
-          return (T) UseCaseModule_ProvideAuthUseCaseFactory.provideAuthUseCase(singletonCImpl.provideUserRepositoryProvider.get());
-
-          case 1: // com.example.savingmoney.data.repository.UserRepository 
-          return (T) RepositoryModule_ProvideUserRepositoryFactory.provideUserRepository(singletonCImpl.userDao(), singletonCImpl.userPreferencesProvider.get());
-
-          case 2: // com.example.savingmoney.data.local.AppDatabase 
-          return (T) AppModule_ProvideDatabaseFactory.provideDatabase(ApplicationContextModule_ProvideContextFactory.provideContext(singletonCImpl.applicationContextModule));
-
-          case 3: // com.example.savingmoney.data.preferences.UserPreferences 
-          return (T) new UserPreferences(ApplicationContextModule_ProvideContextFactory.provideContext(singletonCImpl.applicationContextModule));
+          case 0: // com.google.firebase.auth.FirebaseAuth 
+          return (T) AppModule_ProvideFirebaseAuthFactory.provideFirebaseAuth();
 
           default: throw new AssertionError(id);
         }

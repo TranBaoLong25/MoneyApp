@@ -1,15 +1,11 @@
 package com.example.savingmoney.ui.navigation
 
-sealed class Destinations(val route: String) {
-    // Auth Flow
-    object Welcome : Destinations("welcome") // Màn hình chào mừng/chọn đăng nhập/đăng ký
-    object Login : Destinations("login")
-    object Register : Destinations("register")
-
-    // Main App Flow
-    object Home : Destinations("home")
-    object Stats : Destinations("stats")
-    object AddTransaction : Destinations("add_transaction")
-    object Settings : Destinations("settings")
-    // ... các đích đến khác
+object Destinations {
+    const val Welcome = "welcome"
+    const val Login = "login"
+    const val Register = "register"
+    const val Home = "home"
+    const val Stats = "stats"
+    const val AddTransaction = "add_transaction"
+    const val Settings = "settings"
 }

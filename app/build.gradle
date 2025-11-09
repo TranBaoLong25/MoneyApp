@@ -7,6 +7,8 @@ plugins {
     id 'kotlin-kapt'
     // Plugin Hilt
     id 'com.google.dagger.hilt.android'
+    id 'com.google.gms.google-services'  // sanh
+
 }
 
 android {
@@ -62,6 +64,17 @@ android {
 }
 
 dependencies {
+    // --- Firebase Authentication ---
+    implementation platform('com.google.firebase:firebase-bom:32.3.0')
+    implementation 'com.google.firebase:firebase-auth-ktx'
+
+// --- Firebase Google Sign-In ---
+    implementation 'com.google.android.gms:play-services-auth:20.7.0'
+
+// --- (Tùy chọn: Firestore, Realtime DB, Storage nếu cần) ---
+// implementation 'com.google.firebase:firebase-firestore-ktx'
+// implementation 'com.google.firebase:firebase-database-ktx'
+// implementation 'com.google.firebase:firebase-storage-ktx'
 
     // --- Core Dependencies ---
     implementation 'androidx.core:core-ktx:1.12.0'

@@ -1,8 +1,11 @@
 package com.example.savingmoney.data.local.dao;
 
 import android.database.Cursor;
+import android.os.CancellationSignal;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.room.CoroutinesRoom;
+import androidx.room.EntityDeletionOrUpdateAdapter;
 import androidx.room.EntityInsertionAdapter;
 import androidx.room.RoomDatabase;
 import androidx.room.RoomSQLiteQuery;
@@ -25,6 +28,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
 import javax.annotation.processing.Generated;
+import kotlin.Unit;
 import kotlin.coroutines.Continuation;
 import kotlinx.coroutines.flow.Flow;
 
@@ -34,6 +38,10 @@ public final class TransactionDao_Impl implements TransactionDao {
   private final RoomDatabase __db;
 
   private final EntityInsertionAdapter<Transaction> __insertionAdapterOfTransaction;
+
+  private final EntityDeletionOrUpdateAdapter<Transaction> __deletionAdapterOfTransaction;
+
+  private final EntityDeletionOrUpdateAdapter<Transaction> __updateAdapterOfTransaction;
 
   public TransactionDao_Impl(@NonNull final RoomDatabase __db) {
     this.__db = __db;
@@ -64,6 +72,47 @@ public final class TransactionDao_Impl implements TransactionDao {
         statement.bindLong(7, entity.getDate());
       }
     };
+    this.__deletionAdapterOfTransaction = new EntityDeletionOrUpdateAdapter<Transaction>(__db) {
+      @Override
+      @NonNull
+      protected String createQuery() {
+        return "DELETE FROM `transaction_table` WHERE `id` = ?";
+      }
+
+      @Override
+      protected void bind(@NonNull final SupportSQLiteStatement statement,
+          @NonNull final Transaction entity) {
+        statement.bindLong(1, entity.getId());
+      }
+    };
+    this.__updateAdapterOfTransaction = new EntityDeletionOrUpdateAdapter<Transaction>(__db) {
+      @Override
+      @NonNull
+      protected String createQuery() {
+        return "UPDATE OR ABORT `transaction_table` SET `id` = ?,`userId` = ?,`amount` = ?,`type` = ?,`categoryName` = ?,`note` = ?,`date` = ? WHERE `id` = ?";
+      }
+
+      @Override
+      protected void bind(@NonNull final SupportSQLiteStatement statement,
+          @NonNull final Transaction entity) {
+        statement.bindLong(1, entity.getId());
+        statement.bindLong(2, entity.getUserId());
+        statement.bindDouble(3, entity.getAmount());
+        statement.bindString(4, __TransactionType_enumToString(entity.getType()));
+        if (entity.getCategoryName() == null) {
+          statement.bindNull(5);
+        } else {
+          statement.bindString(5, entity.getCategoryName());
+        }
+        if (entity.getNote() == null) {
+          statement.bindNull(6);
+        } else {
+          statement.bindString(6, entity.getNote());
+        }
+        statement.bindLong(7, entity.getDate());
+        statement.bindLong(8, entity.getId());
+      }
+    };
   }
 
   @Override
@@ -86,11 +135,200 @@ public final class TransactionDao_Impl implements TransactionDao {
   }
 
   @Override
+  public Object deleteTransaction(final Transaction transaction,
+      final Continuation<? super Unit> $completion) {
+    return CoroutinesRoom.execute(__db, true, new Callable<Unit>() {
+      @Override
+      @NonNull
+      public Unit call() throws Exception {
+        __db.beginTransaction();
+        try {
+          __deletionAdapterOfTransaction.handle(transaction);
+          __db.setTransactionSuccessful();
+          return Unit.INSTANCE;
+        } finally {
+          __db.endTransaction();
+        }
+      }
+    }, $completion);
+  }
+
+  @Override
+  public Object updateTransaction(final Transaction transaction,
+      final Continuation<? super Unit> $completion) {
+    return CoroutinesRoom.execute(__db, true, new Callable<Unit>() {
+      @Override
+      @NonNull
+      public Unit call() throws Exception {
+        __db.beginTransaction();
+        try {
+          __updateAdapterOfTransaction.handle(transaction);
+          __db.setTransactionSuccessful();
+          return Unit.INSTANCE;
+        } finally {
+          __db.endTransaction();
+        }
+      }
+    }, $completion);
+  }
+
+  @Override
   public Flow<List<Transaction>> getAllTransactions(final long userId) {
     final String _sql = "SELECT * FROM transaction_table WHERE userId = ? ORDER BY date DESC";
     final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 1);
     int _argIndex = 1;
     _statement.bindLong(_argIndex, userId);
+    return CoroutinesRoom.createFlow(__db, false, new String[] {"transaction_table"}, new Callable<List<Transaction>>() {
+      @Override
+      @NonNull
+      public List<Transaction> call() throws Exception {
+        final Cursor _cursor = DBUtil.query(__db, _statement, false, null);
+        try {
+          final int _cursorIndexOfId = CursorUtil.getColumnIndexOrThrow(_cursor, "id");
+          final int _cursorIndexOfUserId = CursorUtil.getColumnIndexOrThrow(_cursor, "userId");
+          final int _cursorIndexOfAmount = CursorUtil.getColumnIndexOrThrow(_cursor, "amount");
+          final int _cursorIndexOfType = CursorUtil.getColumnIndexOrThrow(_cursor, "type");
+          final int _cursorIndexOfCategoryName = CursorUtil.getColumnIndexOrThrow(_cursor, "categoryName");
+          final int _cursorIndexOfNote = CursorUtil.getColumnIndexOrThrow(_cursor, "note");
+          final int _cursorIndexOfDate = CursorUtil.getColumnIndexOrThrow(_cursor, "date");
+          final List<Transaction> _result = new ArrayList<Transaction>(_cursor.getCount());
+          while (_cursor.moveToNext()) {
+            final Transaction _item;
+            final long _tmpId;
+            _tmpId = _cursor.getLong(_cursorIndexOfId);
+            final long _tmpUserId;
+            _tmpUserId = _cursor.getLong(_cursorIndexOfUserId);
+            final double _tmpAmount;
+            _tmpAmount = _cursor.getDouble(_cursorIndexOfAmount);
+            final TransactionType _tmpType;
+            _tmpType = __TransactionType_stringToEnum(_cursor.getString(_cursorIndexOfType));
+            final String _tmpCategoryName;
+            if (_cursor.isNull(_cursorIndexOfCategoryName)) {
+              _tmpCategoryName = null;
+            } else {
+              _tmpCategoryName = _cursor.getString(_cursorIndexOfCategoryName);
+            }
+            final String _tmpNote;
+            if (_cursor.isNull(_cursorIndexOfNote)) {
+              _tmpNote = null;
+            } else {
+              _tmpNote = _cursor.getString(_cursorIndexOfNote);
+            }
+            final long _tmpDate;
+            _tmpDate = _cursor.getLong(_cursorIndexOfDate);
+            _item = new Transaction(_tmpId,_tmpUserId,_tmpAmount,_tmpType,_tmpCategoryName,_tmpNote,_tmpDate);
+            _result.add(_item);
+          }
+          return _result;
+        } finally {
+          _cursor.close();
+        }
+      }
+
+      @Override
+      protected void finalize() {
+        _statement.release();
+      }
+    });
+  }
+
+  @Override
+  public Object getTransactionById(final long transactionId, final long userId,
+      final Continuation<? super Transaction> $completion) {
+    final String _sql = "SELECT * FROM transaction_table WHERE id = ? AND userId = ? LIMIT 1";
+    final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 2);
+    int _argIndex = 1;
+    _statement.bindLong(_argIndex, transactionId);
+    _argIndex = 2;
+    _statement.bindLong(_argIndex, userId);
+    final CancellationSignal _cancellationSignal = DBUtil.createCancellationSignal();
+    return CoroutinesRoom.execute(__db, false, _cancellationSignal, new Callable<Transaction>() {
+      @Override
+      @Nullable
+      public Transaction call() throws Exception {
+        final Cursor _cursor = DBUtil.query(__db, _statement, false, null);
+        try {
+          final int _cursorIndexOfId = CursorUtil.getColumnIndexOrThrow(_cursor, "id");
+          final int _cursorIndexOfUserId = CursorUtil.getColumnIndexOrThrow(_cursor, "userId");
+          final int _cursorIndexOfAmount = CursorUtil.getColumnIndexOrThrow(_cursor, "amount");
+          final int _cursorIndexOfType = CursorUtil.getColumnIndexOrThrow(_cursor, "type");
+          final int _cursorIndexOfCategoryName = CursorUtil.getColumnIndexOrThrow(_cursor, "categoryName");
+          final int _cursorIndexOfNote = CursorUtil.getColumnIndexOrThrow(_cursor, "note");
+          final int _cursorIndexOfDate = CursorUtil.getColumnIndexOrThrow(_cursor, "date");
+          final Transaction _result;
+          if (_cursor.moveToFirst()) {
+            final long _tmpId;
+            _tmpId = _cursor.getLong(_cursorIndexOfId);
+            final long _tmpUserId;
+            _tmpUserId = _cursor.getLong(_cursorIndexOfUserId);
+            final double _tmpAmount;
+            _tmpAmount = _cursor.getDouble(_cursorIndexOfAmount);
+            final TransactionType _tmpType;
+            _tmpType = __TransactionType_stringToEnum(_cursor.getString(_cursorIndexOfType));
+            final String _tmpCategoryName;
+            if (_cursor.isNull(_cursorIndexOfCategoryName)) {
+              _tmpCategoryName = null;
+            } else {
+              _tmpCategoryName = _cursor.getString(_cursorIndexOfCategoryName);
+            }
+            final String _tmpNote;
+            if (_cursor.isNull(_cursorIndexOfNote)) {
+              _tmpNote = null;
+            } else {
+              _tmpNote = _cursor.getString(_cursorIndexOfNote);
+            }
+            final long _tmpDate;
+            _tmpDate = _cursor.getLong(_cursorIndexOfDate);
+            _result = new Transaction(_tmpId,_tmpUserId,_tmpAmount,_tmpType,_tmpCategoryName,_tmpNote,_tmpDate);
+          } else {
+            _result = null;
+          }
+          return _result;
+        } finally {
+          _cursor.close();
+          _statement.release();
+        }
+      }
+    }, $completion);
+  }
+
+  @Override
+  public Flow<List<Transaction>> getFilteredTransactions(final long userId,
+      final TransactionType type, final String categoryName) {
+    final String _sql = "\n"
+            + "        SELECT * FROM transaction_table \n"
+            + "        WHERE userId = ? \n"
+            + "        AND (? IS NULL OR type = ?) \n"
+            + "        AND (? IS NULL OR categoryName = ?)\n"
+            + "        ORDER BY date DESC\n"
+            + "    ";
+    final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 5);
+    int _argIndex = 1;
+    _statement.bindLong(_argIndex, userId);
+    _argIndex = 2;
+    if (type == null) {
+      _statement.bindNull(_argIndex);
+    } else {
+      _statement.bindString(_argIndex, __TransactionType_enumToString(type));
+    }
+    _argIndex = 3;
+    if (type == null) {
+      _statement.bindNull(_argIndex);
+    } else {
+      _statement.bindString(_argIndex, __TransactionType_enumToString(type));
+    }
+    _argIndex = 4;
+    if (categoryName == null) {
+      _statement.bindNull(_argIndex);
+    } else {
+      _statement.bindString(_argIndex, categoryName);
+    }
+    _argIndex = 5;
+    if (categoryName == null) {
+      _statement.bindNull(_argIndex);
+    } else {
+      _statement.bindString(_argIndex, categoryName);
+    }
     return CoroutinesRoom.createFlow(__db, false, new String[] {"transaction_table"}, new Callable<List<Transaction>>() {
       @Override
       @NonNull

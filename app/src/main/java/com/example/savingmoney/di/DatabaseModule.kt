@@ -21,15 +21,14 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun provideDatabase(
-        @ApplicationContext context: Context // Cần Context của ứng dụng
+        @ApplicationContext context: Context
     ): AppDatabase {
-        // Sử dụng Room.databaseBuilder để khởi tạo database vật lý
         return Room.databaseBuilder(
             context,
             AppDatabase::class.java,
             AppDatabase.DATABASE_NAME
         )
-            .fallbackToDestructiveMigration()
+            .fallbackToDestructiveMigration() // Dùng cho phát triển, cân nhắc dùng Migration() cho Production
             .build()
     }
 
@@ -39,7 +38,7 @@ object DatabaseModule {
         return appDatabase.userDao()
     }
 
-    // 3. Cung cấp TransactionDao (Khắc phục lỗi Missing Binding chính)
+    // 3. Cung cấp TransactionDao
     @Provides
     fun provideTransactionDao(appDatabase: AppDatabase): TransactionDao {
         return appDatabase.transactionDao()

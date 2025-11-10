@@ -1,25 +1,24 @@
-package com.example.savingmoney.ui.transaction
+package com.example.savingmoney.domain.usecase
 
-import androidx.compose.runtime.Composable
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
-import androidx.compose.foundation.layout.Column
+import com.example.savingmoney.data.model.Transaction
+import com.example.savingmoney.data.repository.TransactionRepository
+import javax.inject.Inject
 
-@Composable
-fun AddTransactionScreen(
-    // ⭐️ THÊM THAM SỐ: onNavigateUp (Sửa lỗi 'onNavigateUp' trong NavGraph)
-    onNavigateUp: () -> Unit,
-    // ⭐️ THÊM THAM SỐ: onTransactionAdded (Sửa lỗi 'onTransactionAdded' trong NavGraph)
-    onTransactionAdded: () -> Unit
+class AddTransactionUseCase @Inject constructor(
+    private val transactionRepository: TransactionRepository
 ) {
-    // Logic mẫu để kiểm tra
-    Column {
-        Text("Màn hình Thêm Giao Dịch")
-        Button(onClick = onTransactionAdded) {
-            Text("Lưu & Quay về Home")
+    suspend operator fun invoke(transaction: Transaction): Result<Long> {
+        if (transaction.amount <= 0) {
+            return Result.failure(IllegalArgumentException("Số tiền phải lớn hơn 0."))
         }
-        Button(onClick = onNavigateUp) {
-            Text("Hủy & Quay lại")
+
+        // Thực hiện thêm giao dịch
+        val newId = transactionRepository.addTransaction(transaction)
+
+        return if (newId > 0) {
+            Result.success(newId)
+        } else {
+            Result.failure(Exception("Lưu giao dịch thất bại."))
         }
     }
 }

@@ -5,30 +5,32 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
-// 🎨 Màu nền mới (xanh da trời nhạt pha màu #F2E6EE)
-private val AppBackground = Color(0xFFF2E6EE)
+// 🎨 Màu nền mới
+private val AppBackground = Color.White // Trắng tinh để làm nổi các khối màu
 
-// Dark mode (nếu không cần chỉnh thì giữ nguyên)
+// Dark mode (Giữ nguyên)
 private val DarkColorScheme = darkColorScheme(
     primary = Color(0xFFBB86FC),
     secondary = Color(0xFF03DAC5),
     tertiary = Color(0xFF3700B3)
 )
 
-// ✅ Light mode — đổi toàn bộ nền thành màu F2E6EE
+// ✅ Light mode — Áp dụng bảng màu mới
 private val LightColorScheme = lightColorScheme(
-    primary = Color(0xFF6200EE),
-    secondary = Color(0xFF03DAC5),
-    tertiary = Color(0xFF3700B3),
+    primary = PrimaryDark, // Deep Indigo cho Card chính
+    primaryContainer = PrimaryLight, // Tông nhạt của Primary (Nền Icon Bottom Bar)
+    secondary = SecondaryDark, // Teal/Cyan
+    secondaryContainer = SecondaryLight.copy(alpha = 0.2f), // Nền nhạt của Secondary
 
-    background = AppBackground,
-    surface = AppBackground,
+    background = AppBackground, // Nền toàn màn hình là Trắng
+    surface = Color.White, // Nền Navigation Bar là Trắng
 
     onPrimary = Color.White,
-    onSecondary = Color.Black,
+    onSecondary = Color.White,
     onTertiary = Color.White,
     onBackground = Color.Black,
     onSurface = Color.Black,
+    error = Color(0xFFCF6679) // Đảm bảo lỗi (Chi tiêu) là màu Đỏ dễ nhận biết
 )
 
 @Composable

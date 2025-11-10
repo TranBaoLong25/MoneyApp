@@ -1,0 +1,8 @@
+# Android Studio Files
+.idea/
+.gradle/
+build/
+local.properties
+
+# File chẩn đoán bộ nhớ lớn, không bao giờ commit
+*.hprof

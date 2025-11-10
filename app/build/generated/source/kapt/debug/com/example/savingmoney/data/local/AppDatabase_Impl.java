@@ -46,16 +46,16 @@ public final class AppDatabase_Impl extends AppDatabase {
       public void createAllTables(@NonNull final SupportSQLiteDatabase db) {
         db.execSQL("CREATE TABLE IF NOT EXISTS `user` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `passwordHash` TEXT NOT NULL, `balance` REAL NOT NULL)");
         db.execSQL("CREATE TABLE IF NOT EXISTS `transaction_table` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `userId` INTEGER NOT NULL, `amount` REAL NOT NULL, `type` TEXT NOT NULL, `categoryName` TEXT NOT NULL, `note` TEXT, `date` INTEGER NOT NULL)");
-        db.execSQL("CREATE TABLE IF NOT EXISTS `category` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL)");
+        db.execSQL("CREATE TABLE IF NOT EXISTS `category_table` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `userId` INTEGER, `name` TEXT NOT NULL, `type` TEXT NOT NULL, `iconResId` INTEGER)");
         db.execSQL("CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)");
-        db.execSQL("INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '9f1adacc0b92ae4fbe242915c11dbc92')");
+        db.execSQL("INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '835ee36711622ec151e09eba36ea912b')");
       }
 
       @Override
       public void dropAllTables(@NonNull final SupportSQLiteDatabase db) {
         db.execSQL("DROP TABLE IF EXISTS `user`");
         db.execSQL("DROP TABLE IF EXISTS `transaction_table`");
-        db.execSQL("DROP TABLE IF EXISTS `category`");
+        db.execSQL("DROP TABLE IF EXISTS `category_table`");
         final List<? extends RoomDatabase.Callback> _callbacks = mCallbacks;
         if (_callbacks != null) {
           for (RoomDatabase.Callback _callback : _callbacks) {
@@ -130,21 +130,24 @@ public final class AppDatabase_Impl extends AppDatabase {
                   + " Expected:\n" + _infoTransactionTable + "\n"
                   + " Found:\n" + _existingTransactionTable);
         }
-        final HashMap<String, TableInfo.Column> _columnsCategory = new HashMap<String, TableInfo.Column>(2);
-        _columnsCategory.put("id", new TableInfo.Column("id", "INTEGER", true, 1, null, TableInfo.CREATED_FROM_ENTITY));
-        _columnsCategory.put("name", new TableInfo.Column("name", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
-        final HashSet<TableInfo.ForeignKey> _foreignKeysCategory = new HashSet<TableInfo.ForeignKey>(0);
-        final HashSet<TableInfo.Index> _indicesCategory = new HashSet<TableInfo.Index>(0);
-        final TableInfo _infoCategory = new TableInfo("category", _columnsCategory, _foreignKeysCategory, _indicesCategory);
-        final TableInfo _existingCategory = TableInfo.read(db, "category");
-        if (!_infoCategory.equals(_existingCategory)) {
-          return new RoomOpenHelper.ValidationResult(false, "category(com.example.savingmoney.data.model.Category).\n"
-                  + " Expected:\n" + _infoCategory + "\n"
-                  + " Found:\n" + _existingCategory);
+        final HashMap<String, TableInfo.Column> _columnsCategoryTable = new HashMap<String, TableInfo.Column>(5);
+        _columnsCategoryTable.put("id", new TableInfo.Column("id", "INTEGER", true, 1, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsCategoryTable.put("userId", new TableInfo.Column("userId", "INTEGER", false, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsCategoryTable.put("name", new TableInfo.Column("name", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsCategoryTable.put("type", new TableInfo.Column("type", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsCategoryTable.put("iconResId", new TableInfo.Column("iconResId", "INTEGER", false, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        final HashSet<TableInfo.ForeignKey> _foreignKeysCategoryTable = new HashSet<TableInfo.ForeignKey>(0);
+        final HashSet<TableInfo.Index> _indicesCategoryTable = new HashSet<TableInfo.Index>(0);
+        final TableInfo _infoCategoryTable = new TableInfo("category_table", _columnsCategoryTable, _foreignKeysCategoryTable, _indicesCategoryTable);
+        final TableInfo _existingCategoryTable = TableInfo.read(db, "category_table");
+        if (!_infoCategoryTable.equals(_existingCategoryTable)) {
+          return new RoomOpenHelper.ValidationResult(false, "category_table(com.example.savingmoney.data.model.Category).\n"
+                  + " Expected:\n" + _infoCategoryTable + "\n"
+                  + " Found:\n" + _existingCategoryTable);
         }
         return new RoomOpenHelper.ValidationResult(true, null);
       }
-    }, "9f1adacc0b92ae4fbe242915c11dbc92", "7cf21656fed18b6281baa18d00f93d00");
+    }, "835ee36711622ec151e09eba36ea912b", "ab3109f8bbc114c2d4dc2bc474d613dc");
     final SupportSQLiteOpenHelper.Configuration _sqliteConfig = SupportSQLiteOpenHelper.Configuration.builder(config.context).name(config.name).callback(_openCallback).build();
     final SupportSQLiteOpenHelper _helper = config.sqliteOpenHelperFactory.create(_sqliteConfig);
     return _helper;
@@ -155,7 +158,7 @@ public final class AppDatabase_Impl extends AppDatabase {
   protected InvalidationTracker createInvalidationTracker() {
     final HashMap<String, String> _shadowTablesMap = new HashMap<String, String>(0);
     final HashMap<String, Set<String>> _viewTables = new HashMap<String, Set<String>>(0);
-    return new InvalidationTracker(this, _shadowTablesMap, _viewTables, "user","transaction_table","category");
+    return new InvalidationTracker(this, _shadowTablesMap, _viewTables, "user","transaction_table","category_table");
   }
 
   @Override
@@ -166,7 +169,7 @@ public final class AppDatabase_Impl extends AppDatabase {
       super.beginTransaction();
       _db.execSQL("DELETE FROM `user`");
       _db.execSQL("DELETE FROM `transaction_table`");
-      _db.execSQL("DELETE FROM `category`");
+      _db.execSQL("DELETE FROM `category_table`");
       super.setTransactionSuccessful();
     } finally {
       super.endTransaction();

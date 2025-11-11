@@ -17,14 +17,22 @@ class CategoryRepository @Inject constructor(
         get() = userRepository.getCurrentUserId()
 
     // --- READ: Lấy danh sách Hạng mục ---
-
+// ✅ Hàm này sẽ được ViewModel gọi để thêm hạng mục mới
+    suspend fun addCategory(name: String, type: TransactionType) {
+        // Tạo một Category mới với userId của người dùng hiện tại
+        val newCategory = Category(
+            name = name.trim(),
+            type = type,
+            userId = currentUserId // ✅ Gán userId cho hạng mục mới
+        )
+        categoryDao.insertCategory(newCategory)
+    }
     // 1. Lấy danh sách Hạng mục Thu nhập
     fun getIncomeCategories(): Flow<List<Category>> {
-        // Truyền currentUserId để lọc các hạng mục mặc định (userId=NULL) và hạng mục người dùng tự tạo
         return categoryDao.getCategoriesByType(currentUserId, TransactionType.INCOME)
     }
 
-    // 2. Lấy danh sách Hạng mục Chi tiêu
+    // ✅ Sửa lại hàm này để truyền userId
     fun getExpenseCategories(): Flow<List<Category>> {
         return categoryDao.getCategoriesByType(currentUserId, TransactionType.EXPENSE)
     }

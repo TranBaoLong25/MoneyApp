@@ -57,6 +57,16 @@ class TransactionViewModel @Inject constructor(
     }
 
     // --- Loading Logic ---
+    fun addCategory(name: String) {viewModelScope.launch {
+        if (name.isNotBlank()) {
+            // Lấy loại giao dịch (Thu/Chi) đang được chọn trong UI
+            val type = _uiState.value.selectedType
+            // Gọi đến Repository để thực hiện việc lưu
+            categoryRepository.addCategory(name, type)
+            // Flow trong `loadCategories()` sẽ tự động cập nhật lại danh sách,
+            // chúng ta không cần làm gì thêm ở đây.
+        }
+    }}
     private fun loadCategories() {
         viewModelScope.launch {
             // Lấy danh sách Categories cho dropdown (Income và Expense)

@@ -38,6 +38,10 @@ public final class AuthViewModel extends androidx.lifecycle.ViewModel {
     java.lang.String idToken) {
     }
     
+    /**
+     * ✅ HÀM ĐĂNG XUẤT TẬP TRUNG
+     * Xử lý đăng xuất và ngay lập tức cập nhật trạng thái `isAuthenticated`.
+     */
     public final void signOut() {
     }
 }

@@ -8,7 +8,6 @@ import com.example.savingmoney.domain.usecase.UpdateLanguageUseCase
 import com.example.savingmoney.domain.usecase.UpdateThemeUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.Flow // ✅ Import Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -17,32 +16,30 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-// Trạng thái UI cho màn hình Settings
+// Đơn giản hóa trạng thái - không cần isSigningOut hay errorMessage nữa
 data class SettingsUiState(
     val isDarkMode: Boolean = false,
-    val currentLanguageCode: String = "vi" // 'vi' hoặc 'en'
+    val currentLanguageCode: String = "vi"
 )
 
-// Các sự kiện side-effect cần được xử lý bên ngoài ViewModel
+// Chỉ cần sự kiện thay đổi ngôn ngữ
 sealed class SettingsEvent {
     object LanguageChanged : SettingsEvent()
 }
 
-
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
-    getThemeUseCase: GetThemeUseCase,
-    // ✅ Lưu getLanguageUseCase dưới dạng thuộc tính private val
+    private val getThemeUseCase: GetThemeUseCase,
     private val getLanguageUseCase: GetLanguageUseCase,
     private val updateThemeUseCase: UpdateThemeUseCase,
     private val updateLanguageUseCase: UpdateLanguageUseCase
 ) : ViewModel() {
 
-    // Kênh sự kiện để gửi tín hiệu về UI (recreate Activity)
+    // Kênh sự kiện để gửi tín hiệu về UI (chỉ còn LanguageChanged)
     private val _settingsEventChannel = Channel<SettingsEvent>()
     val settingsEvents = _settingsEventChannel.receiveAsFlow()
 
-    // Kết hợp Theme và Language thành một StateFlow
+    // Kết hợp Theme và Language thành một StateFlow duy nhất
     val uiState: StateFlow<SettingsUiState> = combine(
         getThemeUseCase(),
         getLanguageUseCase()
@@ -66,16 +63,11 @@ class SettingsViewModel @Inject constructor(
     fun onLanguageChanged(code: String) {
         viewModelScope.launch {
             updateLanguageUseCase(code)
-            // Gửi sự kiện yêu cầu Activity tái tạo lại
             _settingsEventChannel.send(SettingsEvent.LanguageChanged)
         }
     }
 
-    // ✅ HÀM BỔ SUNG: Dùng để lấy Flow ngôn ngữ
-    fun getSavedLanguageCode(): Flow<String> {
-        return getLanguageUseCase()
-    }
-
+    // Tạm thời giữ lại hàm này, nhưng nó không còn nhiều ý nghĩa
     fun getCurrentUser(): String {
         return "Long"
     }

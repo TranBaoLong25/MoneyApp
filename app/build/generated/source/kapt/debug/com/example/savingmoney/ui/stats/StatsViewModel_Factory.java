@@ -19,7 +19,8 @@ import javax.inject.Provider;
     "unchecked",
     "rawtypes",
     "KotlinInternal",
-    "KotlinInternalInJava"
+    "KotlinInternalInJava",
+    "cast"
 })
 public final class StatsViewModel_Factory implements Factory<StatsViewModel> {
   private final Provider<GetMonthlySummaryUseCase> getMonthlySummaryUseCaseProvider;

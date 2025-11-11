@@ -5,23 +5,24 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.compose.material3.Text
+import com.example.savingmoney.ui.auth.AuthViewModel
 import com.example.savingmoney.ui.auth.LoginScreen
 import com.example.savingmoney.ui.auth.RegisterScreen
 import com.example.savingmoney.ui.auth.WelcomeScreen
 import com.example.savingmoney.ui.home.HomeScreen
-import com.example.savingmoney.ui.settings.SettingsScreen // Đảm bảo import
+import com.example.savingmoney.ui.settings.FaqScreen
+import com.example.savingmoney.ui.settings.SettingsScreen
 import com.example.savingmoney.ui.transaction.AddTransactionScreen
 import com.example.savingmoney.ui.transaction.TransactionListScreen
 
 @Composable
 fun NavGraph(
     navController: NavHostController,
-    startDestination: String
+    startDestination: String,
+    authViewModel: AuthViewModel
 ) {
-    // ⭐️ Định nghĩa hàm điều hướng chung cho Bottom Bar (BẮT BUỘC)
     val navigateTo: (String) -> Unit = { route ->
         navController.navigate(route) {
-            // Logic Single Top & Restore State cho các tab chính
             popUpTo(Destinations.Home) { saveState = true }
             launchSingleTop = true
             restoreState = true
@@ -33,88 +34,56 @@ fun NavGraph(
         startDestination = startDestination
     ) {
 
-        // =================================================================
-        // 1. AUTHENTICATION SCREENS (Welcome, Login, Register)
-        // =================================================================
-
-        // Welcome Screen
+        // ... (Các màn hình auth và chính giữ nguyên)
         composable(Destinations.Welcome) {
             WelcomeScreen(
-                onNavigateToHome = {
-                    navController.navigate(Destinations.Home) { popUpTo(Destinations.Welcome) { inclusive = true } }
-                },
-                onNavigateToRegister = {
-                    navController.navigate(Destinations.Register)
-                },
-                onNavigateToLogin = {
-                    navController.navigate(Destinations.Login)
-                }
+                onNavigateToHome = { navController.navigate(Destinations.Home) { popUpTo(Destinations.Welcome) { inclusive = true } } },
+                onNavigateToRegister = { navController.navigate(Destinations.Register) },
+                onNavigateToLogin = { navController.navigate(Destinations.Login) }
             )
         }
 
-        // Login Screen
         composable(Destinations.Login) {
             LoginScreen(
-                onNavigateToHome = {
-                    navController.navigate(Destinations.Home) { popUpTo(Destinations.Login) { inclusive = true } }
-                },
-                onNavigateToRegister = {
-                    navController.navigate(Destinations.Register)
-                }
+                authViewModel = authViewModel, 
+                onNavigateToHome = { navController.navigate(Destinations.Home) { popUpTo(Destinations.Login) { inclusive = true } } },
+                onNavigateToRegister = { navController.navigate(Destinations.Register) }
             )
         }
 
-        // Register Screen
         composable(Destinations.Register) {
             RegisterScreen(
-                onNavigateToHome = {
-                    navController.navigate(Destinations.Home) { popUpTo(Destinations.Register) { inclusive = true } }
-                },
-                onNavigateToLogin = {
-                    navController.navigate(Destinations.Login)
-                }
+                authViewModel = authViewModel, 
+                onNavigateToHome = { navController.navigate(Destinations.Home) { popUpTo(Destinations.Register) { inclusive = true } } },
+                onNavigateToLogin = { navController.navigate(Destinations.Login) }
             )
         }
 
-        // =================================================================
-        // 2. MAIN APPLICATION SCREENS (5 TABS & FAB)
-        // =================================================================
-
-        // Home Screen (Tab 1)
         composable(Destinations.Home) {
             HomeScreen(onNavigateTo = navigateTo)
         }
-
-        // Transaction List Screen (Tab 2)
+        
         composable(Destinations.TransactionList) {
             TransactionListScreen(onNavigateTo = navigateTo)
         }
 
-        // Planning Screen (Tab 4) - Placeholder
         composable(Destinations.Planning) {
             Text("Planning Screen - Kế hoạch Ngân sách và Mục tiêu")
         }
 
-        // Settings Screen (Tab 5)
         composable(Destinations.Settings) {
             SettingsScreen(
-                onNavigateUp = { navController.navigateUp() }, // ✅ Thêm onNavigateUp (để sử dụng chung)
-                onNavigateToProfile = { navController.navigate(Destinations.Profile) }, // ✅ Thêm onNavigateToProfile
-                onLogout = {
-                    navController.navigate(Destinations.Login) {
-                        popUpTo(Destinations.Home) { inclusive = true }
-                    }
-                }
+                authViewModel = authViewModel, 
+                onNavigateUp = { navController.navigateUp() },
+                onNavigateToProfile = { navController.navigate(Destinations.Profile) },
+                onNavigateToFaq = { navController.navigate(Destinations.Faq) } // ✅ Thêm điều hướng
             )
         }
 
-        // ✅ Profile Screen
         composable(Destinations.Profile) {
-            // Placeholder cho màn hình Profile. Khi bạn triển khai, sẽ gọi ProfileScreen ở đây.
             Text("Màn hình Hồ sơ cá nhân (Chờ triển khai)")
         }
 
-        // Add Transaction Screen (Dùng cho FAB)
         composable(Destinations.AddTransaction) {
             AddTransactionScreen(
                 onNavigateUp = { navController.navigateUp() },
@@ -124,6 +93,11 @@ fun NavGraph(
                     }
                 }
             )
+        }
+
+        // ✅ Đăng ký màn hình FAQ mới
+        composable(Destinations.Faq) {
+            FaqScreen(onNavigateUp = { navController.navigateUp() })
         }
     }
 }

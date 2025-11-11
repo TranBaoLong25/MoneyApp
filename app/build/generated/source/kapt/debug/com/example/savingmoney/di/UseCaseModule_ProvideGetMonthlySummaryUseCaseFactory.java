@@ -21,7 +21,8 @@ import javax.inject.Provider;
     "unchecked",
     "rawtypes",
     "KotlinInternal",
-    "KotlinInternalInJava"
+    "KotlinInternalInJava",
+    "cast"
 })
 public final class UseCaseModule_ProvideGetMonthlySummaryUseCaseFactory implements Factory<GetMonthlySummaryUseCase> {
   private final Provider<TransactionRepository> transactionRepositoryProvider;

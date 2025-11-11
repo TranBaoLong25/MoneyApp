@@ -21,7 +21,8 @@ import javax.inject.Provider;
     "unchecked",
     "rawtypes",
     "KotlinInternal",
-    "KotlinInternalInJava"
+    "KotlinInternalInJava",
+    "cast"
 })
 public final class TransactionViewModel_Factory implements Factory<TransactionViewModel> {
   private final Provider<AddTransactionUseCase> addTransactionUseCaseProvider;

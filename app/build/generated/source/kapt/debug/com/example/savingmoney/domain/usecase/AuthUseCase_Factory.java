@@ -19,7 +19,8 @@ import javax.inject.Provider;
     "unchecked",
     "rawtypes",
     "KotlinInternal",
-    "KotlinInternalInJava"
+    "KotlinInternalInJava",
+    "cast"
 })
 public final class AuthUseCase_Factory implements Factory<AuthUseCase> {
   private final Provider<UserRepository> userRepositoryProvider;

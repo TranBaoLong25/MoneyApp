@@ -20,7 +20,8 @@ import javax.inject.Provider;
     "unchecked",
     "rawtypes",
     "KotlinInternal",
-    "KotlinInternalInJava"
+    "KotlinInternalInJava",
+    "cast"
 })
 public final class AuthViewModel_Factory implements Factory<AuthViewModel> {
   private final Provider<FirebaseAuth> authProvider;

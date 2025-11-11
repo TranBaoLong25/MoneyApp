@@ -20,7 +20,8 @@ import javax.inject.Provider;
     "unchecked",
     "rawtypes",
     "KotlinInternal",
-    "KotlinInternalInJava"
+    "KotlinInternalInJava",
+    "cast"
 })
 public final class UserRepository_Factory implements Factory<UserRepository> {
   private final Provider<UserDao> userDaoProvider;

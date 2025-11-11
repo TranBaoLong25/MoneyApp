@@ -19,7 +19,7 @@ data class AuthUiState(
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
-    private val auth: FirebaseAuth, // ⭐️ ĐÃ THÊM DẤU PHẨY
+    private val auth: FirebaseAuth,
     private val userRepository: UserRepository
 ) : ViewModel() {
 
@@ -27,8 +27,11 @@ class AuthViewModel @Inject constructor(
     val uiState: StateFlow<AuthUiState> = _uiState
 
     init {
+        // Tự động kiểm tra trạng thái đăng nhập khi ViewModel được khởi tạo
         if (auth.currentUser != null) {
             _uiState.value = AuthUiState(isAuthenticated = true)
+        } else {
+             _uiState.value = AuthUiState(isAuthenticated = false)
         }
     }
 
@@ -96,10 +99,12 @@ class AuthViewModel @Inject constructor(
             }
     }
 
-    // --- Đăng xuất ---
+    /**
+     * ✅ HÀM ĐĂNG XUẤT TẬP TRUNG
+     * Xử lý đăng xuất và ngay lập tức cập nhật trạng thái `isAuthenticated`.
+     */
     fun signOut() {
         auth.signOut()
-        userRepository.logout()
-        _uiState.value = AuthUiState()
+        _uiState.value = AuthUiState(isAuthenticated = false)
     }
 }

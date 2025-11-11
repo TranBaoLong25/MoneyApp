@@ -10,26 +10,27 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
+import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import com.example.savingmoney.di.LanguageEntryPoint
 import com.example.savingmoney.domain.usecase.GetLanguageUseCase
 import com.example.savingmoney.ui.auth.AuthViewModel
 import com.example.savingmoney.ui.navigation.Destinations
 import com.example.savingmoney.ui.navigation.NavGraph
-import com.example.savingmoney.ui.theme.SavingMoneyTheme
-import com.example.savingmoney.ui.settings.SettingsViewModel
 import com.example.savingmoney.ui.settings.SettingsEvent
+import com.example.savingmoney.ui.settings.SettingsViewModel
+import com.example.savingmoney.ui.theme.SavingMoneyTheme
 import com.example.savingmoney.utils.applySelectedLanguage
-import com.example.savingmoney.di.LanguageEntryPoint // ✅ Import EntryPoint từ gói di
 import dagger.hilt.android.AndroidEntryPoint
 import dagger.hilt.android.EntryPointAccessors
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
-import javax.inject.Inject // Không cần thiết, có thể xóa
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -39,20 +40,14 @@ class MainActivity : ComponentActivity() {
 
     override fun attachBaseContext(newBase: Context) {
         val appContext = newBase.applicationContext
-
-        // 1. SỬ DỤNG ENTRY POINT ACCESSORS để lấy dependency
         val languageEntryPoint = EntryPointAccessors.fromApplication(
             appContext,
-            LanguageEntryPoint::class.java // Sử dụng LanguageEntryPoint đã import từ gói di
+            LanguageEntryPoint::class.java
         )
         val getLanguageUseCase = languageEntryPoint.getLanguageUseCase()
-
-        // 2. Lấy mã ngôn ngữ đã lưu đồng bộ
         val languageCode = runBlocking {
             getLanguageUseCase().first()
         }
-
-        // Áp dụng ngôn ngữ
         val context = newBase.applySelectedLanguage(languageCode)
         super.attachBaseContext(context)
     }
@@ -60,62 +55,50 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            val uiState by settingsViewModel.uiState.collectAsState()
+            val settingsUiState by settingsViewModel.uiState.collectAsState()
+            val authState by authViewModel.uiState.collectAsState()
+            val navController = rememberNavController()
 
-            // Lắng nghe sự kiện đổi ngôn ngữ
+            // Lắng nghe sự kiện thay đổi ngôn ngữ
             HandleSettingsEvents(this, settingsViewModel)
 
-            SavingMoneyApp(
-                authViewModel = authViewModel,
-                isDarkMode = uiState.isDarkMode
-            )
-        }
-    }
-}
+            // Đây là nguồn duy nhất để xử lý điều hướng auth
+            LaunchedEffect(authState.isAuthenticated) {
+                val route = if (authState.isAuthenticated) Destinations.Home else Destinations.Welcome
+                navController.navigate(route) {
+                    popUpTo(navController.graph.findStartDestination().id) {
+                        inclusive = true
+                    }
+                    launchSingleTop = true
+                }
+            }
 
-/**
- * Composable này lắng nghe các sự kiện cần xử lý ở cấp độ Activity.
- */
-@Composable
-fun HandleSettingsEvents(activity: Activity, viewModel: SettingsViewModel) {
-    LaunchedEffect(key1 = Unit) {
-        viewModel.settingsEvents.collectLatest { event ->
-            when (event) {
-                is SettingsEvent.LanguageChanged -> {
-                    activity.recreate()
+            SavingMoneyTheme(darkTheme = settingsUiState.isDarkMode) {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    NavGraph(
+                        navController = navController,
+                        startDestination = Destinations.Welcome,
+                        authViewModel = authViewModel // ✅ Truyền AuthViewModel
+                    )
                 }
             }
         }
     }
 }
 
-
 /**
- * Composable chính của ứng dụng, chịu trách nhiệm áp dụng Theme và định tuyến.
+ * Composable này chỉ lắng nghe các sự kiện cài đặt.
  */
 @Composable
-fun SavingMoneyApp(
-    authViewModel: AuthViewModel,
-    isDarkMode: Boolean
-) {
-    val authState by authViewModel.uiState.collectAsState()
-    val startDestination = if (authState.isAuthenticated) {
-        Destinations.Home
-    } else {
-        Destinations.Welcome
-    }
-
-    val navController = rememberNavController()
-
-    SavingMoneyTheme(darkTheme = isDarkMode) {
-        Surface(
-            modifier = Modifier.fillMaxSize(),
-            color = MaterialTheme.colorScheme.background
-        ) {
-            NavGraph(
-                navController = navController,
-                startDestination = startDestination,
-            )
+fun HandleSettingsEvents(activity: Activity, viewModel: SettingsViewModel) {
+    LaunchedEffect(Unit) {
+        viewModel.settingsEvents.collectLatest { event ->
+            if (event is SettingsEvent.LanguageChanged) {
+                activity.recreate()
+            }
         }
     }
 }

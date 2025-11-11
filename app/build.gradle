@@ -31,6 +31,7 @@ android {
     }
 
     compileOptions {
+        // Đảm bảo phù hợp với jvmTarget của Kotlin
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
     }
@@ -55,7 +56,8 @@ android {
 }
 
 dependencies {
-    // --- Compose BOM (Phiên bản mới nhất) ---
+    // --- Compose BOM (FIX LỖI: Sử dụng giá trị cứng hoặc biến đã định nghĩa) ---
+    // Khắc phục lỗi bằng cách sử dụng giá trị trực tiếp cho Compose BOM
     def composeBom = platform("androidx.compose:compose-bom:2024.04.01")
     implementation composeBom
     androidTestImplementation composeBom
@@ -65,28 +67,28 @@ dependencies {
     implementation "androidx.compose.ui:ui-graphics"
     implementation "androidx.compose.ui:ui-tooling-preview"
     implementation "androidx.compose.material3:material3"
-
-    // ✅ FIX LỖI ICONS: Bổ sung thư viện Icons mở rộng
     implementation "androidx.compose.material:material-icons-extended:1.6.8"
 
-    // ✅ FIX LỖI DATASTORE & COROUTINES
-    implementation 'androidx.datastore:datastore-preferences:1.0.0'
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3'
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'
+    // --- Core Android (Cập nhật) ---
+    implementation 'androidx.core:core-ktx:1.13.1'
 
-    // Compose Navigation & Lifecycle
+    // --- Compose Navigation, Lifecycle & Activity (Cập nhật) ---
+    // Khuyến nghị sử dụng phiên bản ổn định (2.7.5) thay vì beta (2.8.0-beta01) nếu không cần tính năng mới nhất
     implementation "androidx.navigation:navigation-compose:2.7.5"
-    implementation "androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2"
-    implementation "androidx.activity:activity-compose:1.8.1"
-    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.6.2' // Dùng cho Activity Compose
+    implementation "androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0" // Phiên bản stable gần nhất
+    implementation "androidx.activity:activity-compose:1.8.1" // Giữ 1.8.1 để ổn định
+    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.7.0'
+
+    // --- DATASTORE & COROUTINES (Cập nhật) ---
+    implementation 'androidx.datastore:datastore-preferences:1.1.1'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1'
 
     // --- Firebase Authentication & Google Sign-In ---
-    implementation platform('com.google.firebase:firebase-bom:32.3.0')
+    // FIX LỖI: Sử dụng giá trị trực tiếp cho Firebase BOM nếu rootProject.ext.firebase_bom_version chưa được định nghĩa
+    implementation platform('com.google.firebase:firebase-bom:33.0.0') // Cập nhật lên 33.0.0
     implementation 'com.google.firebase:firebase-auth-ktx'
-    implementation 'com.google.android.gms:play-services-auth:20.7.0'
-
-    // --- Core Android ---
-    implementation 'androidx.core:core-ktx:1.12.0'
+    implementation 'com.google.android.gms:play-services-auth:21.0.0'
 
     // --- Room Database ---
     implementation "androidx.room:room-runtime:${rootProject.ext.room_version}"
@@ -96,7 +98,7 @@ dependencies {
     // --- Hilt Dependency Injection ---
     implementation "com.google.dagger:hilt-android:${rootProject.ext.hilt_version}"
     kapt "com.google.dagger:hilt-compiler:${rootProject.ext.hilt_version}"
-    implementation "androidx.hilt:hilt-navigation-compose:1.1.0"
+    implementation "androidx.hilt:hilt-navigation-compose:1.2.0"
 
     // --- Testing ---
     testImplementation 'junit:junit:4.13.2'

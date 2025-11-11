@@ -19,7 +19,8 @@ import javax.annotation.processing.Generated;
     "unchecked",
     "rawtypes",
     "KotlinInternal",
-    "KotlinInternalInJava"
+    "KotlinInternalInJava",
+    "cast"
 })
 public final class AppModule_ProvideFirebaseAuthFactory implements Factory<FirebaseAuth> {
   @Override

@@ -20,7 +20,8 @@ import javax.inject.Provider;
     "unchecked",
     "rawtypes",
     "KotlinInternal",
-    "KotlinInternalInJava"
+    "KotlinInternalInJava",
+    "cast"
 })
 public final class HomeViewModel_Factory implements Factory<HomeViewModel> {
   private final Provider<TransactionRepository> transactionRepositoryProvider;

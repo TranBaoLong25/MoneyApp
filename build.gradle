@@ -3,10 +3,17 @@
 buildscript {
     ext {
         // Định nghĩa phiên bản cho các thư viện chính, đã nâng cấp cho tương thích cao
-        compose_compiler_version = '1.5.8'
-        kotlin_version = '1.9.22' // Nâng cấp
-        hilt_version = '2.50' // Nâng cấp
-        room_version = '2.6.1' // Nâng cấp
+
+        // 🚀 TỐI ƯU 1: Nâng cấp Kotlin lên bản ổn định mới nhất (1.9.23 hoặc 2.0.0)
+        kotlin_version = '1.9.23'
+
+        // 🚀 TỐI ƯU 2: Cập nhật Compose Compiler để khớp với Kotlin 1.9.23
+        // (Kotlin 1.9.23 yêu cầu Compiler 1.5.12 hoặc 1.5.13. Dùng 1.5.12 để ổn định)
+        compose_compiler_version = '1.5.12'
+
+        // Nâng cấp Hilt và Room lên bản ổn định mới nhất
+        hilt_version = '2.51.1' // Nâng cấp lên 2.51.1
+        room_version = '2.6.1' // Giữ nguyên, đã là bản mới
 
         // Android SDK Versions
         compile_sdk = 34
@@ -20,12 +27,15 @@ buildscript {
     }
 
     dependencies {
-        // Plugin Android Gradle - Nâng cấp để tương thích với Gradle 9.2.0
-        classpath 'com.android.tools.build:gradle:8.13.0'
+        // 🚀 TỐI ƯU 3: Cập nhật Android Gradle Plugin (AGP) lên phiên bản ổn định
+        // Dùng 8.2.2 (hoặc 8.3.0) thay vì 8.13.0 (phiên bản không xác định)
+        classpath 'com.android.tools.build:gradle:8.2.2'
 
         // Plugin Kotlin
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-        classpath 'com.google.gms:google-services:4.4.0'  //sanh
+
+        // 🚀 TỐI ƯU 4: Cập nhật Google Services lên bản mới nhất
+        classpath 'com.google.gms:google-services:4.4.1'
 
         // Plugin Hilt
         classpath "com.google.dagger:hilt-android-gradle-plugin:$hilt_version"

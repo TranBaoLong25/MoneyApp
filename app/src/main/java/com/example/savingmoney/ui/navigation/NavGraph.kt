@@ -9,7 +9,7 @@ import com.example.savingmoney.ui.auth.LoginScreen
 import com.example.savingmoney.ui.auth.RegisterScreen
 import com.example.savingmoney.ui.auth.WelcomeScreen
 import com.example.savingmoney.ui.home.HomeScreen
-import com.example.savingmoney.ui.settings.SettingsScreen
+import com.example.savingmoney.ui.settings.SettingsScreen // Đảm bảo import
 import com.example.savingmoney.ui.transaction.AddTransactionScreen
 import com.example.savingmoney.ui.transaction.TransactionListScreen
 
@@ -97,11 +97,21 @@ fun NavGraph(
 
         // Settings Screen (Tab 5)
         composable(Destinations.Settings) {
-            SettingsScreen(onLogout = {
-                navController.navigate(Destinations.Login) {
-                    popUpTo(Destinations.Home) { inclusive = true }
+            SettingsScreen(
+                onNavigateUp = { navController.navigateUp() }, // ✅ Thêm onNavigateUp (để sử dụng chung)
+                onNavigateToProfile = { navController.navigate(Destinations.Profile) }, // ✅ Thêm onNavigateToProfile
+                onLogout = {
+                    navController.navigate(Destinations.Login) {
+                        popUpTo(Destinations.Home) { inclusive = true }
+                    }
                 }
-            })
+            )
+        }
+
+        // ✅ Profile Screen
+        composable(Destinations.Profile) {
+            // Placeholder cho màn hình Profile. Khi bạn triển khai, sẽ gọi ProfileScreen ở đây.
+            Text("Màn hình Hồ sơ cá nhân (Chờ triển khai)")
         }
 
         // Add Transaction Screen (Dùng cho FAB)

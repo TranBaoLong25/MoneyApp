@@ -10,4 +10,5 @@ object Destinations {
     const val Settings = "settings"
     const val TransactionList = "transaction_list"
     const val Planning = "planning"
+    const val Profile = "profile"
 }

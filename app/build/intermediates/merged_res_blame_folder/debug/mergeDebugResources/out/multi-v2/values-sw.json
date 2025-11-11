@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.example.savingmoney.app-mergeDebugResources-62:/values-sw/values-sw.xml",
+            "outputFile": "com.example.savingmoney.app-mergeDebugResources-65:/values-sw/values-sw.xml",
             "map": [
                 {
                     "source": "C:\\Users\\Admin\\.gradle\\caches\\8.13\\transforms\\d5f27a3120b000cd1f0b0efaeb3ff70d\\transformed\\jetified-play-services-basement-18.2.0\\res\\values-sw\\values.xml",
@@ -38,6 +38,23 @@
                     }
                 },
                 {
+                    "source": "C:\\Users\\Admin\\.gradle\\caches\\8.13\\transforms\\8065f73e1ba44c592a0c9c7f9a3cb7ed\\transformed\\jetified-ui-release\\res\\values-sw\\values-sw.xml",
+                    "from": {
+                        "startLines": "2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18",
+                        "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
+                        "startOffsets": "105,199,280,381,482,568,649,750,841,923,993,1064,1149,1236,1310,1387,1457",
+                        "endColumns": "93,80,100,100,85,80,100,90,81,69,70,84,86,73,76,69,120",
+                        "endOffsets": "194,275,376,477,563,644,745,836,918,988,1059,1144,1231,1305,1382,1452,1573"
+                    },
+                    "to": {
+                        "startLines": "9,10,30,31,32,36,37,94,95,96,97,98,99,100,102,103,104",
+                        "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
+                        "startOffsets": "828,922,3378,3479,3580,3987,4068,10314,10405,10487,10557,10628,10713,10800,10975,11052,11122",
+                        "endColumns": "93,80,100,100,85,80,100,90,81,69,70,84,86,73,76,69,120",
+                        "endOffsets": "917,998,3474,3575,3661,4063,4164,10400,10482,10552,10623,10708,10795,10869,11047,11117,11238"
+                    }
+                },
+                {
                     "source": "C:\\Users\\Admin\\.gradle\\caches\\8.13\\transforms\\ad13404e11e2ec01e877c88f65f0e1ac\\transformed\\browser-1.4.0\\res\\values-sw\\values-sw.xml",
                     "from": {
                         "startLines": "2,3,4,5",
@@ -52,23 +69,6 @@
                         "startOffsets": "3264,3666,3767,3884",
                         "endColumns": "113,100,116,102",
                         "endOffsets": "3373,3762,3879,3982"
-                    }
-                },
-                {
-                    "source": "C:\\Users\\Admin\\.gradle\\caches\\8.13\\transforms\\609bf09001561cceb1a6d371e0709eaf\\transformed\\jetified-ui-release\\res\\values-sw\\values-sw.xml",
-                    "from": {
-                        "startLines": "2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18",
-                        "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
-                        "startOffsets": "105,199,280,381,482,568,649,750,841,923,993,1064,1149,1236,1310,1387,1457",
-                        "endColumns": "93,80,100,100,85,80,100,90,81,69,70,84,86,73,76,69,120",
-                        "endOffsets": "194,275,376,477,563,644,745,836,918,988,1059,1144,1231,1305,1382,1452,1573"
-                    },
-                    "to": {
-                        "startLines": "9,10,30,31,32,36,37,94,95,96,97,98,99,100,102,103,104",
-                        "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
-                        "startOffsets": "828,922,3378,3479,3580,3987,4068,10314,10405,10487,10557,10628,10713,10800,10975,11052,11122",
-                        "endColumns": "93,80,100,100,85,80,100,90,81,69,70,84,86,73,76,69,120",
-                        "endOffsets": "917,998,3474,3575,3661,4063,4164,10400,10482,10552,10623,10708,10795,10869,11047,11117,11238"
                     }
                 },
                 {
@@ -106,7 +106,7 @@
                     }
                 },
                 {
-                    "source": "C:\\Users\\Admin\\.gradle\\caches\\8.13\\transforms\\06a35519299daa2199dabd0b8bbace6d\\transformed\\jetified-foundation-release\\res\\values-sw\\values-sw.xml",
+                    "source": "C:\\Users\\Admin\\.gradle\\caches\\8.13\\transforms\\81a17f67ab6c568bc990a9af0b038062\\transformed\\jetified-foundation-release\\res\\values-sw\\values-sw.xml",
                     "from": {
                         "startLines": "2,3",
                         "startColumns": "4,4",

@@ -24,23 +24,23 @@ import javax.inject.Provider;
     "KotlinInternalInJava"
 })
 public final class DatabaseModule_ProvideUserDaoFactory implements Factory<UserDao> {
-  private final Provider<AppDatabase> appDatabaseProvider;
+  private final Provider<AppDatabase> databaseProvider;
 
-  public DatabaseModule_ProvideUserDaoFactory(Provider<AppDatabase> appDatabaseProvider) {
-    this.appDatabaseProvider = appDatabaseProvider;
+  public DatabaseModule_ProvideUserDaoFactory(Provider<AppDatabase> databaseProvider) {
+    this.databaseProvider = databaseProvider;
   }
 
   @Override
   public UserDao get() {
-    return provideUserDao(appDatabaseProvider.get());
+    return provideUserDao(databaseProvider.get());
   }
 
   public static DatabaseModule_ProvideUserDaoFactory create(
-      Provider<AppDatabase> appDatabaseProvider) {
-    return new DatabaseModule_ProvideUserDaoFactory(appDatabaseProvider);
+      Provider<AppDatabase> databaseProvider) {
+    return new DatabaseModule_ProvideUserDaoFactory(databaseProvider);
   }
 
-  public static UserDao provideUserDao(AppDatabase appDatabase) {
-    return Preconditions.checkNotNullFromProvides(DatabaseModule.INSTANCE.provideUserDao(appDatabase));
+  public static UserDao provideUserDao(AppDatabase database) {
+    return Preconditions.checkNotNullFromProvides(DatabaseModule.INSTANCE.provideUserDao(database));
   }
 }

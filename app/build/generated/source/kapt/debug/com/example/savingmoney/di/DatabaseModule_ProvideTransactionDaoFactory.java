@@ -24,23 +24,23 @@ import javax.inject.Provider;
     "KotlinInternalInJava"
 })
 public final class DatabaseModule_ProvideTransactionDaoFactory implements Factory<TransactionDao> {
-  private final Provider<AppDatabase> appDatabaseProvider;
+  private final Provider<AppDatabase> databaseProvider;
 
-  public DatabaseModule_ProvideTransactionDaoFactory(Provider<AppDatabase> appDatabaseProvider) {
-    this.appDatabaseProvider = appDatabaseProvider;
+  public DatabaseModule_ProvideTransactionDaoFactory(Provider<AppDatabase> databaseProvider) {
+    this.databaseProvider = databaseProvider;
   }
 
   @Override
   public TransactionDao get() {
-    return provideTransactionDao(appDatabaseProvider.get());
+    return provideTransactionDao(databaseProvider.get());
   }
 
   public static DatabaseModule_ProvideTransactionDaoFactory create(
-      Provider<AppDatabase> appDatabaseProvider) {
-    return new DatabaseModule_ProvideTransactionDaoFactory(appDatabaseProvider);
+      Provider<AppDatabase> databaseProvider) {
+    return new DatabaseModule_ProvideTransactionDaoFactory(databaseProvider);
   }
 
-  public static TransactionDao provideTransactionDao(AppDatabase appDatabase) {
-    return Preconditions.checkNotNullFromProvides(DatabaseModule.INSTANCE.provideTransactionDao(appDatabase));
+  public static TransactionDao provideTransactionDao(AppDatabase database) {
+    return Preconditions.checkNotNullFromProvides(DatabaseModule.INSTANCE.provideTransactionDao(database));
   }
 }

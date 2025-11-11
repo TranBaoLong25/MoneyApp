@@ -1,11 +1,10 @@
+// File: DatabaseModule.kt (thường nằm trong thư mục 'di')
+
 package com.example.savingmoney.di
 
 import android.content.Context
 import androidx.room.Room
-import com.example.savingmoney.data.local.AppDatabase
-import com.example.savingmoney.data.local.dao.CategoryDao
-import com.example.savingmoney.data.local.dao.TransactionDao
-import com.example.savingmoney.data.local.dao.UserDao
+import com.example.savingmoney.data.local.AppDatabase // Import database của bạn
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -17,36 +16,26 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object DatabaseModule {
 
-    // 1. Cung cấp AppDatabase (Singleton)
     @Provides
     @Singleton
-    fun provideDatabase(
-        @ApplicationContext context: Context
-    ): AppDatabase {
+    fun provideDatabase(@ApplicationContext context: Context): AppDatabase {
         return Room.databaseBuilder(
             context,
             AppDatabase::class.java,
-            AppDatabase.DATABASE_NAME
+            AppDatabase.DATABASE_NAME // Sử dụng biến hằng số từ AppDatabase
         )
-            .fallbackToDestructiveMigration() // Dùng cho phát triển, cân nhắc dùng Migration() cho Production
+            // ✅ THÊM DÒNG NÀY để tự động xóa DB khi schema thay đổi (chỉ dùng trong Dev)
+            .fallbackToDestructiveMigration()
             .build()
     }
 
-    // 2. Cung cấp UserDao
+    // Thêm các hàm cung cấp DAO của bạn vào đây
     @Provides
-    fun provideUserDao(appDatabase: AppDatabase): UserDao {
-        return appDatabase.userDao()
-    }
+    fun provideUserDao(database: AppDatabase) = database.userDao()
 
-    // 3. Cung cấp TransactionDao
     @Provides
-    fun provideTransactionDao(appDatabase: AppDatabase): TransactionDao {
-        return appDatabase.transactionDao()
-    }
+    fun provideTransactionDao(database: AppDatabase) = database.transactionDao()
 
-    // 4. Cung cấp CategoryDao
     @Provides
-    fun provideCategoryDao(appDatabase: AppDatabase): CategoryDao {
-        return appDatabase.categoryDao()
-    }
+    fun provideCategoryDao(database: AppDatabase) = database.categoryDao()
 }

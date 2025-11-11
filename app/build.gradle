@@ -1,4 +1,3 @@
-// File: SavingMoneyApp/app/build.gradle (Đã Sửa Lỗi Trùng Lặp)
 plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
@@ -57,20 +56,29 @@ android {
 
 dependencies {
     // --- Compose BOM (Phiên bản mới nhất) ---
-    implementation platform("androidx.compose:compose-bom:2024.04.01") // Giữ lại dòng này
+    def composeBom = platform("androidx.compose:compose-bom:2024.04.01")
+    implementation composeBom
+    androidTestImplementation composeBom
 
-    // --- Jetpack Compose (SỬA: Chỉ cần khai báo tên thư viện, BOM lo version) ---
+    // --- Compose UI & Material 3 ---
     implementation "androidx.compose.ui:ui"
     implementation "androidx.compose.ui:ui-graphics"
     implementation "androidx.compose.ui:ui-tooling-preview"
-    implementation "androidx.compose.material3:material3" // SỬA: Chỉ cần 1 dòng này
+    implementation "androidx.compose.material3:material3"
 
-    // Compose Navigation
+    // ✅ FIX LỖI ICONS: Bổ sung thư viện Icons mở rộng
+    implementation "androidx.compose.material:material-icons-extended:1.6.8"
+
+    // ✅ FIX LỖI DATASTORE & COROUTINES
+    implementation 'androidx.datastore:datastore-preferences:1.0.0'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'
+
+    // Compose Navigation & Lifecycle
     implementation "androidx.navigation:navigation-compose:2.7.5"
-    // Compose + ViewModel
     implementation "androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2"
-    // Activity Compose
     implementation "androidx.activity:activity-compose:1.8.1"
+    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.6.2' // Dùng cho Activity Compose
 
     // --- Firebase Authentication & Google Sign-In ---
     implementation platform('com.google.firebase:firebase-bom:32.3.0')
@@ -79,11 +87,6 @@ dependencies {
 
     // --- Core Android ---
     implementation 'androidx.core:core-ktx:1.12.0'
-    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.6.2'
-
-    // --- Kotlin Coroutines ---
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3'
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'
 
     // --- Room Database ---
     implementation "androidx.room:room-runtime:${rootProject.ext.room_version}"
@@ -98,7 +101,6 @@ dependencies {
     // --- Testing ---
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
-    androidTestImplementation platform("androidx.compose:compose-bom:2024.04.01")
     androidTestImplementation 'androidx.compose.ui:ui-test-junit4'
     debugImplementation 'androidx.compose.ui:ui-tooling'
     debugImplementation 'androidx.compose.ui:ui-test-manifest'

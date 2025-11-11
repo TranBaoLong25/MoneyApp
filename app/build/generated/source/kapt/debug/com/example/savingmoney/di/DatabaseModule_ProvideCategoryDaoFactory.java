@@ -24,23 +24,23 @@ import javax.inject.Provider;
     "KotlinInternalInJava"
 })
 public final class DatabaseModule_ProvideCategoryDaoFactory implements Factory<CategoryDao> {
-  private final Provider<AppDatabase> appDatabaseProvider;
+  private final Provider<AppDatabase> databaseProvider;
 
-  public DatabaseModule_ProvideCategoryDaoFactory(Provider<AppDatabase> appDatabaseProvider) {
-    this.appDatabaseProvider = appDatabaseProvider;
+  public DatabaseModule_ProvideCategoryDaoFactory(Provider<AppDatabase> databaseProvider) {
+    this.databaseProvider = databaseProvider;
   }
 
   @Override
   public CategoryDao get() {
-    return provideCategoryDao(appDatabaseProvider.get());
+    return provideCategoryDao(databaseProvider.get());
   }
 
   public static DatabaseModule_ProvideCategoryDaoFactory create(
-      Provider<AppDatabase> appDatabaseProvider) {
-    return new DatabaseModule_ProvideCategoryDaoFactory(appDatabaseProvider);
+      Provider<AppDatabase> databaseProvider) {
+    return new DatabaseModule_ProvideCategoryDaoFactory(databaseProvider);
   }
 
-  public static CategoryDao provideCategoryDao(AppDatabase appDatabase) {
-    return Preconditions.checkNotNullFromProvides(DatabaseModule.INSTANCE.provideCategoryDao(appDatabase));
+  public static CategoryDao provideCategoryDao(AppDatabase database) {
+    return Preconditions.checkNotNullFromProvides(DatabaseModule.INSTANCE.provideCategoryDao(database));
   }
 }

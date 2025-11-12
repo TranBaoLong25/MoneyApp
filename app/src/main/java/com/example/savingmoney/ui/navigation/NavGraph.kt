@@ -4,16 +4,17 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.compose.material3.Text
 import com.example.savingmoney.ui.auth.AuthViewModel
 import com.example.savingmoney.ui.auth.LoginScreen
 import com.example.savingmoney.ui.auth.RegisterScreen
 import com.example.savingmoney.ui.auth.WelcomeScreen
 import com.example.savingmoney.ui.home.HomeScreen
+import com.example.savingmoney.ui.profile.ProfileScreen
 import com.example.savingmoney.ui.settings.FaqScreen
 import com.example.savingmoney.ui.settings.SettingsScreen
 import com.example.savingmoney.ui.transaction.AddTransactionScreen
 import com.example.savingmoney.ui.transaction.TransactionListScreen
+import androidx.compose.material3.Text
 
 @Composable
 fun NavGraph(
@@ -34,7 +35,8 @@ fun NavGraph(
         startDestination = startDestination
     ) {
 
-        // ... (Các màn hình auth và chính giữ nguyên)
+        // ... (Các màn hình khác giữ nguyên)
+
         composable(Destinations.Welcome) {
             WelcomeScreen(
                 onNavigateToHome = { navController.navigate(Destinations.Home) { popUpTo(Destinations.Welcome) { inclusive = true } } },
@@ -60,7 +62,10 @@ fun NavGraph(
         }
 
         composable(Destinations.Home) {
-            HomeScreen(onNavigateTo = navigateTo)
+            HomeScreen(
+                onNavigateTo = navigateTo,
+                onNavigateToProfile = { navController.navigate(Destinations.Profile) }
+            )
         }
         
         composable(Destinations.TransactionList) {
@@ -71,17 +76,18 @@ fun NavGraph(
             Text("Planning Screen - Kế hoạch Ngân sách và Mục tiêu")
         }
 
+        // ✅ SỬA LẠI CÁCH GỌI SETTINGSSCREEN
         composable(Destinations.Settings) {
             SettingsScreen(
                 authViewModel = authViewModel, 
                 onNavigateUp = { navController.navigateUp() },
                 onNavigateToProfile = { navController.navigate(Destinations.Profile) },
-                onNavigateToFaq = { navController.navigate(Destinations.Faq) } // ✅ Thêm điều hướng
+                onNavigateToFaq = { navController.navigate(Destinations.Faq) }
             )
         }
 
         composable(Destinations.Profile) {
-            Text("Màn hình Hồ sơ cá nhân (Chờ triển khai)")
+            ProfileScreen(onNavigateUp = { navController.navigateUp() })
         }
 
         composable(Destinations.AddTransaction) {
@@ -95,7 +101,6 @@ fun NavGraph(
             )
         }
 
-        // ✅ Đăng ký màn hình FAQ mới
         composable(Destinations.Faq) {
             FaqScreen(onNavigateUp = { navController.navigateUp() })
         }

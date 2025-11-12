@@ -2,21 +2,22 @@ package com.example.savingmoney.ui.home
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountBalanceWallet
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Commute
-import androidx.compose.material.icons.filled.Label
-import androidx.compose.material.icons.filled.Movie
-import androidx.compose.material.icons.filled.ReceiptLong
-import androidx.compose.material.icons.filled.Restaurant
-import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material.icons.filled.TrendingDown
-import androidx.compose.material.icons.filled.TrendingUp
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -38,6 +39,7 @@ import com.example.savingmoney.utils.FormatUtils.formatCurrency
 @Composable
 fun HomeScreen(
     onNavigateTo: (String) -> Unit,
+    onNavigateToProfile: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -47,10 +49,7 @@ fun HomeScreen(
             .fillMaxSize()
             .background(
                 Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFFF7F9FC),
-                        Color(0xFFB2FEFA)
-                    )
+                    colors = listOf(Color(0xFFF7F9FC), Color(0xFFB2FEFA))
                 )
             )
     ) {
@@ -63,14 +62,11 @@ fun HomeScreen(
                     onNavigate = onNavigateTo
                 )
             },
-            // ✅ ĐÃ XÓA FLOATING ACTION BUTTON Ở ĐÂY
             floatingActionButtonPosition = FabPosition.Center
         ) { paddingValues ->
             if (uiState.isLoading) {
                 Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(paddingValues),
+                    modifier = Modifier.fillMaxSize().padding(paddingValues),
                     contentAlignment = Alignment.Center
                 ) {
                     CircularProgressIndicator(color = Color(0xFF0ED2F7))
@@ -83,7 +79,7 @@ fun HomeScreen(
                         .padding(horizontal = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(18.dp)
                 ) {
-                    item { HeaderSection(uiState.userName, uiState.currentMonthYear) }
+                    item { HeaderSection(uiState.userName, uiState.currentMonthYear, onNavigateToProfile) }
                     item { 
                         BalanceCard(
                             balance = uiState.currentBalance,
@@ -98,7 +94,6 @@ fun HomeScreen(
                             onViewAll = { onNavigateTo(Destinations.TransactionList) }
                         )
                     }
-                    // Thêm khoảng trống ở cuối để không bị che bởi FAB
                     item { Spacer(modifier = Modifier.height(80.dp)) }
                 }
             }
@@ -106,10 +101,8 @@ fun HomeScreen(
     }
 }
 
-// ... (Các Composable khác giữ nguyên như trước)
-
 @Composable
-fun HeaderSection(userName: String, currentMonth: String) {
+fun HeaderSection(userName: String, currentMonth: String, onNavigateToProfile: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -139,7 +132,7 @@ fun HeaderSection(userName: String, currentMonth: String) {
                         colors = listOf(Color(0xFF0ED2F7), Color(0xFF005B96))
                     )
                 )
-                .clickable { /* Navigate to profile */ },
+                .clickable(onClick = onNavigateToProfile),
             contentAlignment = Alignment.Center
         ) {
             Text(
@@ -202,13 +195,7 @@ fun BalanceCard(balance: Double, income: Double, expense: Double) {
 }
 
 @Composable
-fun IncomeExpenseItem(
-    label: String,
-    amount: Double,
-    icon: ImageVector,
-    backgroundColor: Color,
-    iconTint: Color
-) {
+fun IncomeExpenseItem(label: String, amount: Double, icon: ImageVector, backgroundColor: Color, iconTint: Color) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Box(
             modifier = Modifier
@@ -237,26 +224,18 @@ fun StatsSection(stats: List<CategoryStatistic>) {
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(20.dp))
-            .background(
-                Brush.verticalGradient(
-                    listOf(
-                        Color(0xFFE3FDFD),
-                        Color(0xFFCBF1F5),
-                        Color(0xFFA6E3E9)
-                    )
-                )
-            )
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
             .padding(20.dp)
     ) {
         Text(
-            "Thống kê theo danh mục",
-            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-            color = Color(0xFF005B96)
+            "Thống kê tháng này",
+            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Spacer(Modifier.height(12.dp))
 
         if (stats.isEmpty()) {
-            Text("Chưa có dữ liệu thống kê.", color = Color.Gray)
+            Text("Chưa có dữ liệu thống kê.", color = MaterialTheme.colorScheme.onSurfaceVariant)
         } else {
             stats.forEach { stat ->
                 Row(
@@ -267,21 +246,19 @@ fun StatsSection(stats: List<CategoryStatistic>) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            modifier = Modifier
-                                .size(12.dp)
-                                .clip(CircleShape)
-                                .background(Color(stat.category.hashCode()).copy(alpha = 0.8f))
-                        )
+                        getIconForCategory(stat.category).let {
+                            Icon(imageVector = it, contentDescription = stat.category, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
+                        }
                         Spacer(Modifier.width(12.dp))
                         Text(
                             stat.category,
-                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                     }
                     Text(
                         formatCurrency(stat.amount),
-                        color = Color(0xFFD32F2F),
+                        color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold)
                     )
                 }
@@ -347,6 +324,14 @@ fun getIconForCategory(category: String): ImageVector {
         "Mua sắm" -> Icons.Default.ShoppingCart
         "Di chuyển" -> Icons.Default.Commute
         "Giải trí" -> Icons.Default.Movie
+        "Tiền nhà" -> Icons.Default.HomeWork
+        "Tiền điện" -> Icons.Default.Bolt
+        "Tiền nước" -> Icons.Default.WaterDrop
+        "Học phí" -> Icons.Default.School
+        "Chi phí phát sinh" -> Icons.Default.AddBusiness
+        "Thưởng" -> Icons.Default.MilitaryTech
+        "Đầu tư" -> Icons.Default.TrendingUp
+        "Quà tặng" -> Icons.Default.CardGiftcard
         else -> Icons.Default.Label
     }
 }

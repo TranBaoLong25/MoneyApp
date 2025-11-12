@@ -18,34 +18,18 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object RepositoryModule {
 
-    // ❌ UserRepository không còn cần thiết nữa vì chúng ta lấy userId trực tiếp từ FirebaseAuth
-    // @Provides
-    // @Singleton
-    // fun provideUserRepository(userDao: UserDao, userPreferences: UserPreferences): UserRepository {
-    //     return UserRepository(userDao, userPreferences)
-    // }
-
-    /**
-     * ✅ Cung cấp TransactionRepository với FirebaseAuth.
-     */
     @Provides
     @Singleton
     fun provideTransactionRepository(transactionDao: TransactionDao, firebaseAuth: FirebaseAuth): TransactionRepository {
         return TransactionRepository(transactionDao, firebaseAuth)
     }
 
-    /**
-     * ✅ Cung cấp CategoryRepository mà không cần tham số.
-     */
     @Provides
     @Singleton
     fun provideCategoryRepository(categoryDao: CategoryDao): CategoryRepository {
         return CategoryRepository(categoryDao)
     }
 
-    /**
-     * ✅ Cung cấp SettingsRepository.
-     */
     @Provides
     @Singleton
     fun provideSettingsRepository(dataStore: AppPreferencesDataStore): SettingsRepository {

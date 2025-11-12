@@ -1,4 +1,3 @@
-// main/java/com/example/savingmoney/data/local/datastore/AppPreferencesDataStore.kt
 package com.example.savingmoney.data.local.datastore
 
 import android.content.Context

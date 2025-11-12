@@ -1,16 +1,13 @@
 package com.example.savingmoney.di
 
-import com.example.savingmoney.data.local.dao.CategoryDao // ✅ Cần import
-import com.example.savingmoney.data.local.dao.TransactionDao // ✅ Cần import
-import com.example.savingmoney.data.local.dao.UserDao // ✅ Cần import
-import com.example.savingmoney.data.preferences.UserPreferences // ✅ Cần import
-import com.example.savingmoney.data.repository.CategoryRepository // ✅ Cần import
-import com.example.savingmoney.data.repository.SettingsRepositoryImpl // ✅ Cần import
-import com.example.savingmoney.data.repository.TransactionRepository // ✅ Cần import
-import com.example.savingmoney.data.repository.UserRepository // ✅ Cần import
-import com.example.savingmoney.data.local.datastore.AppPreferencesDataStore // ✅ Cần import DataStore
-
-import com.example.savingmoney.domain.repository.SettingsRepository // ✅ Cần import Interface Settings
+import com.example.savingmoney.data.local.dao.CategoryDao
+import com.example.savingmoney.data.local.dao.TransactionDao
+import com.example.savingmoney.data.local.datastore.AppPreferencesDataStore
+import com.example.savingmoney.data.repository.CategoryRepository
+import com.example.savingmoney.data.repository.SettingsRepositoryImpl
+import com.example.savingmoney.data.repository.TransactionRepository
+import com.example.savingmoney.domain.repository.SettingsRepository
+import com.google.firebase.auth.FirebaseAuth
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -21,25 +18,34 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object RepositoryModule {
 
+    // ❌ UserRepository không còn cần thiết nữa vì chúng ta lấy userId trực tiếp từ FirebaseAuth
+    // @Provides
+    // @Singleton
+    // fun provideUserRepository(userDao: UserDao, userPreferences: UserPreferences): UserRepository {
+    //     return UserRepository(userDao, userPreferences)
+    // }
+
+    /**
+     * ✅ Cung cấp TransactionRepository với FirebaseAuth.
+     */
     @Provides
     @Singleton
-    fun provideUserRepository(userDao: UserDao, userPreferences: UserPreferences): UserRepository {
-        return UserRepository(userDao, userPreferences)
+    fun provideTransactionRepository(transactionDao: TransactionDao, firebaseAuth: FirebaseAuth): TransactionRepository {
+        return TransactionRepository(transactionDao, firebaseAuth)
     }
 
+    /**
+     * ✅ Cung cấp CategoryRepository mà không cần tham số.
+     */
     @Provides
     @Singleton
-    fun provideTransactionRepository(transactionDao: TransactionDao, userRepository: UserRepository): TransactionRepository {
-        return TransactionRepository(transactionDao, userRepository)
+    fun provideCategoryRepository(categoryDao: CategoryDao): CategoryRepository {
+        return CategoryRepository(categoryDao)
     }
 
-    @Provides
-    @Singleton
-    fun provideCategoryRepository(categoryDao: CategoryDao, userRepository: UserRepository): CategoryRepository {
-        return CategoryRepository(categoryDao, userRepository)
-    }
-
-    // Cung cấp SettingsRepository
+    /**
+     * ✅ Cung cấp SettingsRepository.
+     */
     @Provides
     @Singleton
     fun provideSettingsRepository(dataStore: AppPreferencesDataStore): SettingsRepository {

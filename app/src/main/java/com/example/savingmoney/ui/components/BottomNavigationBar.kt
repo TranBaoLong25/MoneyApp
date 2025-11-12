@@ -1,12 +1,11 @@
 package com.example.savingmoney.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -35,63 +34,85 @@ fun BottomNavigationBar(
     val items = listOf(
         NavItem(Destinations.Home, Icons.Filled.Home, "Tổng Quan"),
         NavItem(Destinations.TransactionList, Icons.Filled.List, "Giao Dịch"),
+        // Mục trống để tạo không gian cho FAB
+        NavItem("", Icons.Filled.Add, ""), 
         NavItem(Destinations.Planning, Icons.Filled.Star, "Kế Hoạch"),
         NavItem(Destinations.Settings, Icons.Filled.Settings, "Cài Đặt"),
     )
 
-    // ⭐️ BỌC VÀO BOX ĐỂ THÊM SHADOW VÀ ROUNDED CORNER
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(72.dp) // Chiều cao tăng nhẹ để chứa bo góc
-            // ⭐️ ÁP DỤNG ĐỘ NỔI (SHADOW) - ĐÃ SỬA LỖI SPOTCOLOR
-            .shadow(
-                elevation = 12.dp, // Tăng elevation để nổi bật hơn
-                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-                // ✅ KHẮC PHỤC LỖI: Dùng Color.Black.copy(alpha) để mô phỏng bóng
-                spotColor = Color.Black.copy(alpha = 0.2f)
-            )
-            // ⭐️ ÁP DỤNG BO GÓC
-            .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
-            .background(MaterialTheme.colorScheme.surface), // Màu nền của thanh điều hướng
+            .height(80.dp), 
         contentAlignment = Alignment.BottomCenter
     ) {
-        NavigationBar(
+        // Nền kính mờ
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                // THÊM PADDING DƯỚI ĐỂ ĐẨY NỘI DUNG LÊN CAO
-                .padding(bottom = 0.dp),
-            // Đặt màu Container là Transparent để lộ màu nền từ Box cha
-            containerColor = Color.Transparent,
-            tonalElevation = 0.dp
-        ) {
-            items.forEachIndexed { index, item ->
-                // Logic chèn Spacer cho FAB
-                if (index == 2) {
-                    Spacer(modifier = Modifier.width(64.dp))
-                }
-
-                val isSelected = currentRoute.startsWith(item.route)
-
-                NavigationBarItem(
-                    icon = { Icon(item.icon, contentDescription = item.label) },
-                    label = { Text(item.label) },
-                    selected = isSelected,
-                    onClick = {
-                        if (currentRoute != item.route) {
-                            onNavigate(item.route)
-                        }
-                    },
-                    // Tinh chỉnh màu sắc item được chọn
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                        selectedTextColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                        indicatorColor = MaterialTheme.colorScheme.primaryContainer, // Màu nền của icon khi chọn
-                        unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                        unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                .height(72.dp)
+                .shadow(
+                    elevation = 20.dp,
+                    shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+                    ambientColor = Color.White.copy(alpha = 0.3f),
+                    spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
                 )
+                .clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
+                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.9f))
+                .border(
+                    width = 1.dp,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f),
+                    shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+                ),
+            contentAlignment = Alignment.BottomCenter
+        ) {
+            NavigationBar(
+                modifier = Modifier.fillMaxWidth(),
+                containerColor = Color.Transparent,
+                tonalElevation = 0.dp
+            ) {
+                items.forEachIndexed { index, item ->
+                    // Mục ở giữa sẽ không có gì
+                    if (index == 2) {
+                        NavigationBarItem(
+                            selected = false,
+                            onClick = { },
+                            icon = { },
+                            enabled = false
+                        )
+                    } else {
+                        val isSelected = currentRoute.startsWith(item.route)
+                        NavigationBarItem(
+                            icon = { Icon(item.icon, contentDescription = item.label) },
+                            label = { Text(item.label) },
+                            selected = isSelected,
+                            onClick = { if (currentRoute != item.route) onNavigate(item.route) },
+                            colors = NavigationBarItemDefaults.colors(
+                                selectedIconColor = MaterialTheme.colorScheme.primary,
+                                selectedTextColor = MaterialTheme.colorScheme.primary,
+                                indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                            )
+                        )
+                    }
+                }
             }
+        }
+
+        // ✅ NÚT FAB ĐƯỢC ĐẶT Ở TRUNG TÂM
+        FloatingActionButton(
+            onClick = { onNavigate(Destinations.AddTransaction) },
+            modifier = Modifier.align(Alignment.TopCenter), // Căn chỉnh lên trên cùng của Box
+            shape = CircleShape,
+            containerColor = Color(0xFF0ED2F7),
+            elevation = FloatingActionButtonDefaults.elevation(8.dp)
+        ) {
+            Icon(
+                Icons.Filled.Add,
+                contentDescription = "Thêm Giao Dịch",
+                tint = Color.White
+            )
         }
     }
 }

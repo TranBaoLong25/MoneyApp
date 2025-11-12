@@ -4,61 +4,70 @@ import com.example.savingmoney.data.local.dao.IncomeExpenseSummary
 import com.example.savingmoney.data.local.dao.TransactionDao
 import com.example.savingmoney.data.model.CategoryStatistic
 import com.example.savingmoney.data.model.Transaction
-import com.example.savingmoney.data.model.TransactionType // Thêm Import
+import com.example.savingmoney.data.model.TransactionType
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class TransactionRepository @Inject constructor(
     private val transactionDao: TransactionDao,
-    private val userRepository: UserRepository
+    private val firebaseAuth: FirebaseAuth
 ) {
-    // Đảm bảo luôn lấy ID người dùng hiện tại
-    private val currentUserId: Long
-        get() = userRepository.getCurrentUserId()
 
-    // --- CRUD: Cập nhật dữ liệu ---
+    private val currentUserId: String?
+        get() = firebaseAuth.currentUser?.uid
 
-    suspend fun addTransaction(transaction: Transaction): Long {
-        // Luôn gán userId chính xác trước khi insert/replace
-        return transactionDao.insertTransaction(transaction.copy(userId = currentUserId))
+    // --- CRUD Operations ---
+
+    suspend fun addTransaction(transaction: Transaction) {
+        currentUserId?.let {
+            transactionDao.insertTransaction(transaction.copy(userId = it))
+        }
     }
 
-    // Bổ sung: Cập nhật giao dịch
     suspend fun updateTransaction(transaction: Transaction) {
-        // Luôn đảm bảo chỉ cập nhật giao dịch của người dùng hiện tại
-        transactionDao.updateTransaction(transaction.copy(userId = currentUserId))
+        currentUserId?.let {
+            transactionDao.updateTransaction(transaction.copy(userId = it))
+        }
     }
 
-    // Bổ sung: Xóa giao dịch
     suspend fun deleteTransaction(transaction: Transaction) {
         transactionDao.deleteTransaction(transaction)
     }
 
-    // --- READ: Truy vấn dữ liệu ---
-
-    fun getRecentTransactions(): Flow<List<Transaction>> {
-        return transactionDao.getAllTransactions(currentUserId)
+    // ✅ SỬA LẠI HÀM NÀY
+    suspend fun getTransactionById(transactionId: String): Transaction? {
+        return currentUserId?.let {
+            transactionDao.getTransactionById(transactionId, it)
+        }
     }
 
-    // Bổ sung: Lấy giao dịch theo ID (dùng cho màn hình chi tiết)
-    suspend fun getTransactionById(transactionId: Long): Transaction? {
-        return transactionDao.getTransactionById(transactionId, currentUserId)
+    // --- Flow-based READ Operations ---
+
+    fun getAllTransactions(): Flow<List<Transaction>> {
+        return currentUserId?.let {
+            transactionDao.getAllTransactions(it)
+        } ?: emptyFlow()
     }
 
-    // Bổ sung: Lọc giao dịch
     fun getFilteredTransactions(type: TransactionType?, categoryName: String?): Flow<List<Transaction>> {
-        return transactionDao.getFilteredTransactions(currentUserId, type, categoryName)
+        return currentUserId?.let {
+            transactionDao.getFilteredTransactions(it, type, categoryName)
+        } ?: emptyFlow()
     }
-
-    // --- ANALYTICS: Thống kê ---
 
     fun getIncomeExpenseSummary(startDate: Long, endDate: Long): Flow<IncomeExpenseSummary> {
-        return transactionDao.getIncomeExpenseSummary(currentUserId, startDate, endDate)
+        return currentUserId?.let {
+            transactionDao.getIncomeExpenseSummary(it, startDate, endDate)
+        } ?: emptyFlow()
     }
 
     fun getMonthlyExpenseStats(startDate: Long, endDate: Long): Flow<List<CategoryStatistic>> {
-        return transactionDao.getMonthlyExpenseStats(currentUserId, startDate, endDate)
+        return currentUserId?.let {
+            transactionDao.getMonthlyExpenseStats(it, startDate, endDate)
+        } ?: emptyFlow()
     }
 }

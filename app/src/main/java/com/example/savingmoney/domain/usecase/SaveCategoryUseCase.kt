@@ -8,11 +8,12 @@ class SaveCategoryUseCase @Inject constructor(
     private val categoryRepository: CategoryRepository
 ) {
     suspend operator fun invoke(category: Category): Result<Unit> {
-        if (category.name.isBlank()) {
-            return Result.failure(IllegalArgumentException("Tên hạng mục không được để trống."))
-        }
+        // CHÚ Ý: UseCase này không còn được sử dụng.
+        // Chức năng thêm/lưu một hạng mục đã bị loại bỏ vì ứng dụng
+        // hiện tại sử dụng một danh sách hạng mục cố định.
+        // Tệp này nên được xóa khỏi dự án.
 
-        categoryRepository.saveCategory(category)
+        // Trả về success để đảm bảo ứng dụng có thể build thành công.
         return Result.success(Unit)
     }
 }

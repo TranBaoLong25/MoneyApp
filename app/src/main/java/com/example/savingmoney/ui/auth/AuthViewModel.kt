@@ -6,8 +6,8 @@ import com.google.firebase.auth.GoogleAuthProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import javax.inject.Inject
-import com.example.savingmoney.data.repository.UserRepository
 
 // Trạng thái UI
 data class AuthUiState(
@@ -19,19 +19,17 @@ data class AuthUiState(
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
-    private val auth: FirebaseAuth,
-    private val userRepository: UserRepository
+    private val auth: FirebaseAuth // ✅ CHỈ CẦN FirebaseAuth
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AuthUiState())
-    val uiState: StateFlow<AuthUiState> = _uiState
+    val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
 
     init {
-        // Tự động kiểm tra trạng thái đăng nhập khi ViewModel được khởi tạo
         if (auth.currentUser != null) {
             _uiState.value = AuthUiState(isAuthenticated = true)
         } else {
-             _uiState.value = AuthUiState(isAuthenticated = false)
+            _uiState.value = AuthUiState(isAuthenticated = false)
         }
     }
 
@@ -40,14 +38,10 @@ class AuthViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(isLoading = true, error = null)
         auth.createUserWithEmailAndPassword(email, password)
             .addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        isRegistered = true,
-                        error = null
-                    )
+                _uiState.value = if (task.isSuccessful) {
+                    _uiState.value.copy(isLoading = false, isRegistered = true, error = null)
                 } else {
-                    _uiState.value = _uiState.value.copy(
+                    _uiState.value.copy(
                         isLoading = false,
                         isRegistered = false,
                         error = task.exception?.localizedMessage ?: "Đăng ký thất bại"
@@ -61,14 +55,10 @@ class AuthViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(isLoading = true, error = null)
         auth.signInWithEmailAndPassword(email, password)
             .addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        isAuthenticated = true,
-                        error = null
-                    )
+                _uiState.value = if (task.isSuccessful) {
+                    _uiState.value.copy(isLoading = false, isAuthenticated = true, error = null)
                 } else {
-                    _uiState.value = _uiState.value.copy(
+                    _uiState.value.copy(
                         isLoading = false,
                         isAuthenticated = false,
                         error = task.exception?.localizedMessage ?: "Đăng nhập thất bại"
@@ -83,14 +73,10 @@ class AuthViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(isLoading = true, error = null)
         auth.signInWithCredential(credential)
             .addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        isAuthenticated = true,
-                        error = null
-                    )
+                _uiState.value = if (task.isSuccessful) {
+                    _uiState.value.copy(isLoading = false, isAuthenticated = true, error = null)
                 } else {
-                    _uiState.value = _uiState.value.copy(
+                    _uiState.value.copy(
                         isLoading = false,
                         isAuthenticated = false,
                         error = task.exception?.localizedMessage ?: "Đăng nhập Google thất bại"
@@ -100,8 +86,7 @@ class AuthViewModel @Inject constructor(
     }
 
     /**
-     * ✅ HÀM ĐĂNG XUẤT TẬP TRUNG
-     * Xử lý đăng xuất và ngay lập tức cập nhật trạng thái `isAuthenticated`.
+     * Xử lý đăng xuất.
      */
     fun signOut() {
         auth.signOut()

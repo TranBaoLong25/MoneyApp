@@ -1,179 +1,59 @@
-// File: SavingMoneyApp/app/src/main/java/com/example/savingmoney/ui/transaction/TransactionViewModel.kt
 package com.example.savingmoney.ui.transaction
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.savingmoney.data.model.Category
 import com.example.savingmoney.data.model.Transaction
 import com.example.savingmoney.data.model.TransactionType
-import com.example.savingmoney.data.repository.CategoryRepository // Cần thiết
-import com.example.savingmoney.domain.usecase.AddTransactionUseCase // Cần thiết
-import com.example.savingmoney.domain.usecase.GetTransactionListUseCase // Cần thiết
+import com.example.savingmoney.data.repository.TransactionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.launch
-import java.util.Calendar
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
-// --- UI State (Trạng thái) ---
-data class TransactionUiState(
-    // Dữ liệu cho Transaction List Screen
+// Trạng thái mới cho màn hình danh sách
+data class TransactionListUiState(
     val transactions: List<Transaction> = emptyList(),
     val filteredType: TransactionType? = null,
-    val filteredCategory: String? = null,
-
-    // Dữ liệu cho Add Transaction Screen
-    val incomeCategories: List<Category> = emptyList(),
-    val expenseCategories: List<Category> = emptyList(),
-    val amountInput: String = "",
-    val noteInput: String = "",
-    val selectedCategory: Category? = null,
-    val selectedType: TransactionType = TransactionType.EXPENSE, // Mặc định là chi tiêu
-    val selectedDate: Long = Calendar.getInstance().timeInMillis,
-
-    val isLoading: Boolean = true,
-    val isSaving: Boolean = false,
-    val transactionSaved: Boolean = false,
-    val error: String? = null
+    val isLoading: Boolean = true
 )
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class TransactionViewModel @Inject constructor(
-    private val addTransactionUseCase: AddTransactionUseCase,
-    private val getTransactionListUseCase: GetTransactionListUseCase,
-    private val categoryRepository: CategoryRepository
+    private val transactionRepository: TransactionRepository
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(TransactionUiState())
-    val uiState: StateFlow<TransactionUiState> = _uiState
+    // StateFlow để giữ bộ lọc hiện tại
+    private val _filterType = MutableStateFlow<TransactionType?>(null)
+    val filterType = _filterType.asStateFlow()
 
-    init {
-        loadCategories()
-        observeTransactions()
-    }
-
-    // --- Loading Logic ---
-    fun addCategory(name: String) {viewModelScope.launch {
-        if (name.isNotBlank()) {
-            // Lấy loại giao dịch (Thu/Chi) đang được chọn trong UI
-            val type = _uiState.value.selectedType
-            // Gọi đến Repository để thực hiện việc lưu
-            categoryRepository.addCategory(name, type)
-            // Flow trong `loadCategories()` sẽ tự động cập nhật lại danh sách,
-            // chúng ta không cần làm gì thêm ở đây.
+    // StateFlow chính, tự động cập nhật khi bộ lọc thay đổi
+    val uiState: StateFlow<TransactionListUiState> = _filterType.flatMapLatest { type ->
+        // Khi _filterType thay đổi, flatMapLatest sẽ hủy coroutine cũ và chạy lại
+        // với giá trị `type` mới, gọi lại hàm trong repository.
+        transactionRepository.getFilteredTransactions(type, null).map { transactions ->
+            TransactionListUiState(
+                transactions = transactions,
+                filteredType = type,
+                isLoading = false
+            )
         }
-    }}
-    private fun loadCategories() {
-        viewModelScope.launch {
-            // Lấy danh sách Categories cho dropdown (Income và Expense)
-            categoryRepository.getIncomeCategories()
-                .combine(categoryRepository.getExpenseCategories()) { income, expense ->
-                    _uiState.value = _uiState.value.copy(
-                        incomeCategories = income,
-                        expenseCategories = expense,
-                        // Nếu chưa chọn Category, chọn Category đầu tiên làm mặc định
-                        selectedCategory = if (_uiState.value.selectedCategory == null) expense.firstOrNull() else _uiState.value.selectedCategory,
-                        isLoading = false
-                    )
-                }.launchIn(this)
-        }
-    }
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = TransactionListUiState() // Trạng thái ban đầu
+    )
 
-    // --- Transaction List Logic ---
-    private fun observeTransactions() {
-        // Lấy dữ liệu lọc từ State
-        _uiState.onEach { state ->
-            // Sử dụng UseCase để lấy dữ liệu Flow đã được lọc
-            getTransactionListUseCase(state.filteredType, state.filteredCategory)
-                .onEach { transactions ->
-                    _uiState.value = _uiState.value.copy(transactions = transactions)
-                }.launchIn(viewModelScope)
-        }.launchIn(viewModelScope)
-    }
-
-    fun setFilter(type: TransactionType?, category: String?) {
-        _uiState.value = _uiState.value.copy(
-            filteredType = type,
-            filteredCategory = category
-        )
-    }
-
-    // --- Add Transaction Logic ---
-    fun setAmount(input: String) {
-        _uiState.value = _uiState.value.copy(amountInput = input)
-    }
-
-    fun setNote(input: String) {
-        _uiState.value = _uiState.value.copy(noteInput = input)
-    }
-
-    fun setType(type: TransactionType) {
-        // Khi đổi loại giao dịch, reset Category
-        _uiState.value = _uiState.value.copy(
-            selectedType = type,
-            selectedCategory = if (type == TransactionType.EXPENSE) _uiState.value.expenseCategories.firstOrNull() else _uiState.value.incomeCategories.firstOrNull()
-        )
-    }
-
-    fun setCategory(category: Category) {
-        _uiState.value = _uiState.value.copy(selectedCategory = category)
-    }
-
-    fun setDate(timestamp: Long) {
-        _uiState.value = _uiState.value.copy(selectedDate = timestamp)
-    }
-
-    fun saveTransaction() {
-        val state = _uiState.value
-        _uiState.value = state.copy(isSaving = true, error = null, transactionSaved = false)
-
-        val amount = state.amountInput.toDoubleOrNull()
-
-        if (amount == null || amount <= 0) {
-            _uiState.value = state.copy(isSaving = false, error = "Số tiền không hợp lệ")
-            return
-        }
-
-        if (state.selectedCategory == null) {
-            _uiState.value = state.copy(isSaving = false, error = "Vui lòng chọn hạng mục")
-            return
-        }
-
-        val newTransaction = Transaction(
-            userId = 0L, // Repository sẽ ghi đè (override) giá trị này
-            amount = amount,
-            type = state.selectedType,
-            categoryName = state.selectedCategory.name,
-            note = state.noteInput.takeIf { it.isNotBlank() },
-            date = state.selectedDate
-        )
-
-        viewModelScope.launch {
-            val result = addTransactionUseCase(newTransaction)
-            result.onSuccess {
-                // Reset form sau khi lưu thành công
-                _uiState.value = state.copy(
-                    isSaving = false,
-                    amountInput = "",
-                    noteInput = "",
-                    selectedCategory = null,
-                    selectedDate = Calendar.getInstance().timeInMillis,
-                    transactionSaved = true // Báo hiệu lưu thành công
-                )
-            }.onFailure { e ->
-                _uiState.value = state.copy(
-                    isSaving = false,
-                    error = e.message
-                )
-            }
-        }
-    }
-
-    fun transactionSavedComplete() {
-        _uiState.value = _uiState.value.copy(transactionSaved = false)
+    /**
+     * Hàm để UI gọi khi người dùng chọn một bộ lọc mới.
+     */
+    fun setFilter(type: TransactionType?) {
+        _filterType.value = type
     }
 }

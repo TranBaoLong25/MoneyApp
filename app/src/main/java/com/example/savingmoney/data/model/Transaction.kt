@@ -1,26 +1,27 @@
 package com.example.savingmoney.data.model
 
-import androidx.room.Entity // BẮT BUỘC
-import androidx.room.PrimaryKey // BẮT BUỘC
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+
 enum class TransactionType {
-    INCOME,    // Thu nhập
-    EXPENSE    // Chi tiêu
+    INCOME, 
+    EXPENSE
 }
-@Entity(tableName = "transaction_table")
+
+@Entity(tableName = "transactions")
 data class Transaction(
-    @PrimaryKey(autoGenerate = true)
-    val id: Long = 0L,
-    val userId: Long, // Liên kết với người dùng
+    @PrimaryKey
+    val id: String = "",
+    val userId: String,
     val amount: Double,
     val type: TransactionType,
-    val categoryName: String, // Tên hạng mục (Ví dụ: "Ăn uống", "Lương")
+    val categoryName: String, 
     val note: String? = null,
-    val date: Long // Thời gian tạo (Timestamp)
+    val date: Long
 )
 
-// Data class cho thống kê hạng mục chi tiêu (dùng cho biểu đồ)
+// Data class này không phải là một Entity, chỉ dùng để hiển thị
 data class CategoryStatistic(
     val category: String,
     val amount: Double
-
 )

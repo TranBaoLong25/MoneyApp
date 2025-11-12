@@ -7,7 +7,16 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Commute
+import androidx.compose.material.icons.filled.Label
+import androidx.compose.material.icons.filled.Movie
+import androidx.compose.material.icons.filled.ReceiptLong
+import androidx.compose.material.icons.filled.Restaurant
+import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.TrendingDown
+import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -15,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -32,16 +42,14 @@ fun HomeScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    // Nền gradient mượt hơn và có chiều sâu
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(
                 Brush.verticalGradient(
                     colors = listOf(
-                        Color(0xFFB2FEFA), // Xanh mint nhạt
-                        Color(0xFF0ED2F7), // Xanh dương nhạt
-                        Color(0xFFF7F9FC)
+                        Color(0xFFF7F9FC),
+                        Color(0xFFB2FEFA)
                     )
                 )
             )
@@ -55,22 +63,7 @@ fun HomeScreen(
                     onNavigate = onNavigateTo
                 )
             },
-            floatingActionButton = {
-                FloatingActionButton(
-                    onClick = { onNavigateTo(Destinations.AddTransaction) },
-                    modifier = Modifier
-                        .offset(y = 75.dp),
-                    shape = CircleShape,
-                    containerColor = Color(0xFF0ED2F7),
-                    elevation = FloatingActionButtonDefaults.elevation(8.dp)
-                ) {
-                    Icon(
-                        Icons.Filled.Add,
-                        contentDescription = "Thêm Giao Dịch",
-                        tint = Color.White
-                    )
-                }
-            },
+            // ✅ ĐÃ XÓA FLOATING ACTION BUTTON Ở ĐÂY
             floatingActionButtonPosition = FabPosition.Center
         ) { paddingValues ->
             if (uiState.isLoading) {
@@ -91,14 +84,12 @@ fun HomeScreen(
                     verticalArrangement = Arrangement.spacedBy(18.dp)
                 ) {
                     item { HeaderSection(uiState.userName, uiState.currentMonthYear) }
-                    item {
+                    item { 
                         BalanceCard(
                             balance = uiState.currentBalance,
                             income = uiState.todayIncome,
-                            expense = uiState.todayExpense,
-                            monthlyIncome = uiState.monthlySummary.totalIncome,
-                            monthlyExpense = uiState.monthlySummary.totalExpense
-                        )
+                            expense = uiState.todayExpense
+                        ) 
                     }
                     item { StatsSection(uiState.monthlyStats) }
                     item {
@@ -107,175 +98,139 @@ fun HomeScreen(
                             onViewAll = { onNavigateTo(Destinations.TransactionList) }
                         )
                     }
+                    // Thêm khoảng trống ở cuối để không bị che bởi FAB
+                    item { Spacer(modifier = Modifier.height(80.dp)) }
                 }
             }
         }
     }
 }
 
-// =======================================
-// HEADER SECTION
-// =======================================
+// ... (Các Composable khác giữ nguyên như trước)
+
 @Composable
 fun HeaderSection(userName: String, currentMonth: String) {
-    Box(
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 16.dp)
-            .clip(RoundedCornerShape(22.dp))        // ✅ Bo góc mềm
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFF6A11CB),   // tím sang
-                        Color(0xFF2575FC)    // xanh dương modern
-                    )
-                )
+            .padding(top = 24.dp, bottom = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(verticalArrangement = Arrangement.Center) {
+            Text(
+                text = "Chào mừng, $userName!",
+                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                color = Color(0xFF003B5C)
             )
-            .padding(20.dp)                         // ✅ Padding bên trong
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-
-            Column {
-                Text(
-                    text = "Xin chào, $userName 👋",
-                    style = MaterialTheme.typography.titleLarge.copy(
-                        fontWeight = FontWeight.Bold
-                    ),
-                    color = Color.White
-                )
-
-                Spacer(modifier = Modifier.height(4.dp))
-
-                Text(
-                    text = currentMonth,
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontWeight = FontWeight.SemiBold
-                    ),
-                    color = Color.White.copy(alpha = 0.8f)
-                )
-            }
-
-            Box(
-                modifier = Modifier
-                    .size(52.dp)
-                    .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.25f)) // Avatar trong suốt nhẹ
-                    .clickable { /* Navigate to profile */ },
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = userName.firstOrNull()?.uppercase() ?: "U",
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontWeight = FontWeight.Bold
-                    ),
-                    color = Color.White
-                )
-            }
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = "Báo cáo cho: $currentMonth",
+                style = MaterialTheme.typography.titleSmall,
+                color = Color.Gray
+            )
         }
-    }
-}
-
-
-// =======================================
-// BALANCE CARD
-// =======================================
-@Composable
-fun BalanceCard(balance: Double, income: Double, expense: Double, monthlyIncome: Double, monthlyExpense: Double) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(24.dp)),
-        colors = CardDefaults.cardColors(
-            containerColor = Color.Transparent
-        ),
-        elevation = CardDefaults.cardElevation(12.dp)
-    ) {
         Box(
             modifier = Modifier
+                .size(52.dp)
+                .clip(CircleShape)
                 .background(
                     Brush.verticalGradient(
-                        listOf(
-                            Color(0xFF6A11CB), // tím đậm
-                            Color(0xFFB721FF), // tím pastel
-                            Color(0xFFFFE29F)  // vàng nhẹ
-                        )
+                        colors = listOf(Color(0xFF0ED2F7), Color(0xFF005B96))
                     )
                 )
-                .padding(24.dp)
+                .clickable { /* Navigate to profile */ },
+            contentAlignment = Alignment.Center
         ) {
-            Column {
-                Text("Số dư hiện tại", color = Color.White.copy(alpha = 0.9f))
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    formatCurrency(balance),
-                    style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.ExtraBold),
-                    color = Color.White
+            Text(
+                text = userName.firstOrNull()?.uppercase() ?: "U",
+                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                color = Color.White
+            )
+        }
+    }
+}
+
+@Composable
+fun BalanceCard(balance: Double, income: Double, expense: Double) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(28.dp),
+        elevation = CardDefaults.cardElevation(8.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .background(
+                    Brush.linearGradient(
+                        colors = listOf(Color(0xFF005B96), Color(0xFF0ED2F7))
+                    )
                 )
-
-                Spacer(Modifier.height(16.dp))
-                Divider(color = Color.White.copy(alpha = 0.3f))
-                Spacer(Modifier.height(16.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceAround
-                ) {
-                    FlowItem("Thu hôm nay", income, Color.White, Color(0xFF8AFFA7))
-                    FlowItem("Chi hôm nay", expense, Color.White, Color(0xFFFFA6A6))
-                }
-
-                Spacer(Modifier.height(16.dp))
-                Divider(color = Color.White.copy(alpha = 0.2f))
-                Spacer(Modifier.height(12.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(
-                        "Thu tháng: ${formatCurrency(monthlyIncome)}",
-                        color = Color.White.copy(alpha = 0.9f)
-                    )
-                    Text(
-                        "Chi tháng: ${formatCurrency(monthlyExpense)}",
-                        color = Color.White.copy(alpha = 0.9f)
-                    )
-                }
+                .padding(horizontal = 24.dp, vertical = 32.dp)
+        ) {
+            Text(
+                text = "Tổng số dư",
+                style = MaterialTheme.typography.titleMedium,
+                color = Color.White.copy(alpha = 0.85f)
+            )
+            Text(
+                text = formatCurrency(balance),
+                style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.ExtraBold),
+                color = Color.White
+            )
+            Spacer(Modifier.height(32.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                IncomeExpenseItem(
+                    label = "Thu nhập",
+                    amount = income,
+                    icon = Icons.Default.TrendingUp,
+                    backgroundColor = Color.White.copy(alpha = 0.1f),
+                    iconTint = Color(0xFF00FFA3)
+                )
+                IncomeExpenseItem(
+                    label = "Chi tiêu",
+                    amount = expense,
+                    icon = Icons.Default.TrendingDown,
+                    backgroundColor = Color.White.copy(alpha = 0.1f),
+                    iconTint = Color(0xFFFF5252)
+                )
             }
         }
     }
 }
 
-
-// =======================================
-// FLOW ITEM
-// =======================================
 @Composable
-fun FlowItem(label: String, amount: Double, color: Color, indicatorColor: Color) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+fun IncomeExpenseItem(
+    label: String,
+    amount: Double,
+    icon: ImageVector,
+    backgroundColor: Color,
+    iconTint: Color
+) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
         Box(
             modifier = Modifier
-                .size(10.dp)
+                .size(48.dp)
                 .clip(CircleShape)
-                .background(indicatorColor)
-        )
-        Spacer(Modifier.height(4.dp))
-        Text(label, style = MaterialTheme.typography.labelSmall, color = color.copy(alpha = 0.8f))
-        Text(
-            formatCurrency(amount),
-            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-            color = color
-        )
+                .background(backgroundColor),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(imageVector = icon, contentDescription = label, tint = iconTint, modifier = Modifier.size(28.dp))
+        }
+        Spacer(Modifier.width(12.dp))
+        Column {
+            Text(label, style = MaterialTheme.typography.titleSmall, color = Color.White.copy(0.8f))
+            Text(
+                formatCurrency(amount),
+                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                color = Color.White
+            )
+        }
     }
 }
 
-// =======================================
-// STATS SECTION
-// =======================================
 @Composable
 fun StatsSection(stats: List<CategoryStatistic>) {
     Column(
@@ -335,28 +290,9 @@ fun StatsSection(stats: List<CategoryStatistic>) {
     }
 }
 
-
-// =======================================
-// RECENT TRANSACTIONS
-// =======================================
 @Composable
 fun RecentTransactionsSection(transactions: List<Transaction>, onViewAll: () -> Unit) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(20.dp))
-            .background(
-                Brush.verticalGradient(
-                    listOf(
-                        Color(0xFFFFF7E6),
-                        Color(0xFFFFEACC),
-                        Color(0xFFFFD7B3)
-                    )
-                )
-            )
-            .padding(20.dp)
-    ) {
-
+    Column(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -365,52 +301,100 @@ fun RecentTransactionsSection(transactions: List<Transaction>, onViewAll: () -> 
             Text(
                 "Giao dịch gần đây",
                 style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                color = Color(0xFF005B96)
+                color = Color(0xFF003B5C)
             )
             TextButton(onClick = onViewAll) {
                 Text("Xem tất cả", color = Color(0xFF0ED2F7))
             }
         }
 
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(12.dp))
 
-        if (transactions.isEmpty()) {
-            Text("Chưa có giao dịch nào gần đây.", color = Color.Gray)
-        } else {
-            transactions.forEach { tx ->
-                TransactionRow(tx)
-                Divider(color = Color.LightGray.copy(alpha = 0.3f))
+        Card(
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(2.dp)
+        ) {
+            Column(modifier = Modifier.padding(vertical = 8.dp)) {
+                if (transactions.isEmpty()) {
+                    Text(
+                        "Chưa có giao dịch nào gần đây.",
+                        color = Color.Gray,
+                        modifier = Modifier.padding(16.dp).align(Alignment.CenterHorizontally)
+                    )
+                } else {
+                    transactions.forEachIndexed { index, tx ->
+                        TransactionRow(tx)
+                        if (index < transactions.lastIndex) {
+                            HorizontalDivider(
+                                color = Color.LightGray.copy(alpha = 0.4f),
+                                modifier = Modifier.padding(horizontal = 16.dp)
+                            )
+                        }
+                    }
+                }
             }
         }
     }
 }
 
+@Composable
+fun getIconForCategory(category: String): ImageVector {
+    return when (category) {
+        "Ăn uống" -> Icons.Default.Restaurant
+        "Lương" -> Icons.Default.AccountBalanceWallet
+        "Hóa đơn" -> Icons.Default.ReceiptLong
+        "Mua sắm" -> Icons.Default.ShoppingCart
+        "Di chuyển" -> Icons.Default.Commute
+        "Giải trí" -> Icons.Default.Movie
+        else -> Icons.Default.Label
+    }
+}
 
-// =======================================
-// TRANSACTION ROW
-// =======================================
 @Composable
 fun TransactionRow(tx: Transaction) {
     val color = if (tx.type == TransactionType.INCOME) Color(0xFF2E7D32) else Color(0xFFD32F2F)
     val prefix = if (tx.type == TransactionType.INCOME) "+" else "-"
+    val icon = getIconForCategory(tx.categoryName)
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 10.dp)
-            .clickable { /* Navigate transaction detail */ },
-        horizontalArrangement = Arrangement.SpaceBetween,
+            .clickable { /* Navigate transaction detail */ }
+            .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Column {
+        Box(
+            modifier = Modifier
+                .size(48.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = tx.categoryName,
+                tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                modifier = Modifier.size(24.dp)
+            )
+        }
+
+        Spacer(Modifier.width(16.dp))
+
+        Column(modifier = Modifier.weight(1f)) {
             Text(
                 tx.categoryName,
-                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
             )
             if (!tx.note.isNullOrBlank()) {
-                Text(tx.note!!, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                Text(
+                    tx.note!!,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Gray
+                )
             }
         }
+
         Text(
             "$prefix${formatCurrency(tx.amount)}",
             color = color,

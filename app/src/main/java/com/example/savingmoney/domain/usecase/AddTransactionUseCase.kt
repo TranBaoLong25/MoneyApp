@@ -7,18 +7,23 @@ import javax.inject.Inject
 class AddTransactionUseCase @Inject constructor(
     private val transactionRepository: TransactionRepository
 ) {
-    suspend operator fun invoke(transaction: Transaction): Result<Long> {
+    /**
+     * Thực hiện thêm một giao dịch.
+     * Trả về Result<Unit> để báo hiệu thành công hoặc thất bại.
+     */
+    suspend operator fun invoke(transaction: Transaction): Result<Unit> {
         if (transaction.amount <= 0) {
             return Result.failure(IllegalArgumentException("Số tiền phải lớn hơn 0."))
         }
 
-        // Thực hiện thêm giao dịch
-        val newId = transactionRepository.addTransaction(transaction)
-
-        return if (newId > 0) {
-            Result.success(newId)
-        } else {
-            Result.failure(Exception("Lưu giao dịch thất bại."))
+        return try {
+            // Gọi hàm suspend trong repository
+            transactionRepository.addTransaction(transaction)
+            // Nếu không có lỗi, trả về success
+            Result.success(Unit)
+        } catch (e: Exception) {
+            // Nếu có lỗi, trả về failure với exception tương ứng
+            Result.failure(e)
         }
     }
 }

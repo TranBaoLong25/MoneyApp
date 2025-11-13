@@ -8,6 +8,7 @@ object Destinations {
     const val TransactionList = "transaction_list"
     const val AddTransaction = "add_transaction"
     const val Planning = "planning"
+    const val Stats = "stats" // Thêm đích đến cho màn hình thống kê
     const val Settings = "settings"
     const val Profile = "profile"
     const val Faq = "faq" // ✅ Thêm đích đến mới

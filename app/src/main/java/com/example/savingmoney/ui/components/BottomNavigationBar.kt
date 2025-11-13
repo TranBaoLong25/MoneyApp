@@ -100,7 +100,7 @@ fun BottomNavigationBar(
             }
         }
 
-        // ✅ NÚT FAB ĐƯỢC ĐẶT Ở TRUNG TÂM
+        // NÚT FAB ĐƯỢC ĐẶT Ở TRUNG TÂM
         FloatingActionButton(
             onClick = { onNavigate(Destinations.AddTransaction) },
             modifier = Modifier.align(Alignment.TopCenter), // Căn chỉnh lên trên cùng của Box

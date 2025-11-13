@@ -87,7 +87,12 @@ fun HomeScreen(
                             expense = uiState.todayExpense
                         ) 
                     }
-                    item { StatsSection(uiState.monthlyStats) }
+                    item { 
+                        StatsSection(
+                            stats = uiState.monthlyStats,
+                            onViewAll = { onNavigateTo(Destinations.Stats) }
+                        ) 
+                    }
                     item {
                         RecentTransactionsSection(
                             transactions = uiState.recentTransactions,
@@ -219,7 +224,7 @@ fun IncomeExpenseItem(label: String, amount: Double, icon: ImageVector, backgrou
 }
 
 @Composable
-fun StatsSection(stats: List<CategoryStatistic>) {
+fun StatsSection(stats: List<CategoryStatistic>, onViewAll: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -227,11 +232,20 @@ fun StatsSection(stats: List<CategoryStatistic>) {
             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
             .padding(20.dp)
     ) {
-        Text(
-            "Thống kê tháng này",
-            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                "Thống kê tháng này",
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            TextButton(onClick = onViewAll) {
+                Text("Xem tất cả", color = Color(0xFF0ED2F7))
+            }
+        }
         Spacer(Modifier.height(12.dp))
 
         if (stats.isEmpty()) {

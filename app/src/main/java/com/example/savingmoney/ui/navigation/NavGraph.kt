@@ -12,6 +12,7 @@ import com.example.savingmoney.ui.home.HomeScreen
 import com.example.savingmoney.ui.profile.ProfileScreen
 import com.example.savingmoney.ui.settings.FaqScreen
 import com.example.savingmoney.ui.settings.SettingsScreen
+import com.example.savingmoney.ui.stats.StatsScreen
 import com.example.savingmoney.ui.transaction.AddTransactionScreen
 import com.example.savingmoney.ui.transaction.TransactionListScreen
 import androidx.compose.material3.Text
@@ -76,7 +77,10 @@ fun NavGraph(
             Text("Planning Screen - Kế hoạch Ngân sách và Mục tiêu")
         }
 
-        // ✅ SỬA LẠI CÁCH GỌI SETTINGSSCREEN
+        composable(Destinations.Stats) { 
+            StatsScreen(onNavigateUp = { navController.navigateUp() }) // Thêm hành động quay lại
+        }
+
         composable(Destinations.Settings) {
             SettingsScreen(
                 authViewModel = authViewModel, 

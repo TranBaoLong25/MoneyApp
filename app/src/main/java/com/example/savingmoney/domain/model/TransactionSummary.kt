@@ -5,5 +5,7 @@ data class TransactionSummary(
     val totalIncome: Double,
     val totalExpense: Double,
     val netBalance: Double,
-    val topExpenseCategory: String
+    val topExpenseCategory: String,
+    val dailyExpenses: Map<Int, Double> = emptyMap(),
+    val expenseByCategory: Map<String, Double> = emptyMap() // Thêm chi tiêu theo danh mục
 )

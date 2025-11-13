@@ -1,29 +1,61 @@
 package com.example.savingmoney.domain.usecase
 
+import com.example.savingmoney.data.model.TransactionType
 import com.example.savingmoney.domain.model.TransactionSummary
-import com.example.savingmoney.data.repository.TransactionRepository // Cần Import
+import com.example.savingmoney.data.repository.TransactionRepository
+import com.example.savingmoney.utils.TimeUtils
+import kotlinx.coroutines.flow.first
+import java.util.Calendar
 import javax.inject.Inject
 
 class GetMonthlySummaryUseCase @Inject constructor(
-    private val transactionRepository: TransactionRepository // ✅ Đã sửa
+    private val transactionRepository: TransactionRepository
 ) {
     suspend operator fun invoke(month: Int, year: Int): Result<TransactionSummary> {
-        // Logic thực tế sẽ gọi repository:
-        // Lấy startDate và endDate của tháng/năm
-        // val startDate = TimeUtils.getStartOfMonth(month, year)
-        // val endDate = TimeUtils.getEndOfMonth(month, year)
+        return try {
+            val calendar = Calendar.getInstance().apply {
+                set(Calendar.YEAR, year)
+                set(Calendar.MONTH, month - 1) // Calendar.MONTH is 0-based
+            }
+            val timeInMillis = calendar.timeInMillis
 
-        // val summaryFlow = transactionRepository.getIncomeExpenseSummary(startDate, endDate)
-        // ... (convert Flow to TransactionSummary)
+            val startDate = TimeUtils.getStartOfMonth(timeInMillis)
+            val endDate = TimeUtils.getEndOfMonth(timeInMillis)
 
-        // Tạm thời trả về mock data như bạn đã định nghĩa
-        return Result.success(
-            TransactionSummary(
-                totalIncome = 5000000.0,
-                totalExpense = 3500000.0,
-                netBalance = 1500000.0,
-                topExpenseCategory = "Ăn uống"
+            val allTransactions = transactionRepository.getAllTransactions().first()
+            val transactions = allTransactions.filter { it.date in startDate..endDate }
+
+            val totalIncome = transactions.filter { it.type == TransactionType.INCOME }.sumOf { it.amount }
+            val totalExpense = transactions.filter { it.type == TransactionType.EXPENSE }.sumOf { it.amount }
+            val netBalance = totalIncome - totalExpense
+
+            val expenseByCategory = transactions
+                .filter { it.type == TransactionType.EXPENSE }
+                .groupBy { it.categoryName }
+                .mapValues { (_, txs) -> txs.sumOf { it.amount } }
+
+            val topExpenseCategory = expenseByCategory.maxByOrNull { it.value }?.key ?: "N/A"
+
+            val dailyExpenses = transactions
+                .filter { it.type == TransactionType.EXPENSE }
+                .groupBy { 
+                    val cal = Calendar.getInstance().apply { this.timeInMillis = it.date }
+                    cal.get(Calendar.DAY_OF_MONTH)
+                }
+                .mapValues { (_, txs) -> txs.sumOf { it.amount } }
+
+            Result.success(
+                TransactionSummary(
+                    totalIncome = totalIncome,
+                    totalExpense = totalExpense,
+                    netBalance = netBalance,
+                    topExpenseCategory = topExpenseCategory,
+                    dailyExpenses = dailyExpenses,
+                    expenseByCategory = expenseByCategory // Thêm dữ liệu mới
+                )
             )
-        )
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 }

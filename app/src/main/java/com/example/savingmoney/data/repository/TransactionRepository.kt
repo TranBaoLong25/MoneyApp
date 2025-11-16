@@ -70,4 +70,10 @@ class TransactionRepository @Inject constructor(
             transactionDao.getMonthlyExpenseStats(it, startDate, endDate)
         } ?: emptyFlow()
     }
+    suspend fun getAllTransactionsOnce(): List<Transaction> {
+        return currentUserId?.let {
+            transactionDao.getAllTransactionsOnce(it)
+        } ?: emptyList()
+    }
+
 }

@@ -71,6 +71,7 @@ dependencies {
     implementation 'com.google.firebase:firebase-auth-ktx'
     implementation 'com.google.firebase:firebase-storage-ktx' // ✅ THÊM THƯ VIỆN CÒN THIẾU
     implementation 'com.google.android.gms:play-services-auth:21.1.0'
+    implementation 'com.google.firebase:firebase-firestore-ktx:24.6.1'
 
     // Icons
     implementation 'androidx.compose.material:material-icons-extended'

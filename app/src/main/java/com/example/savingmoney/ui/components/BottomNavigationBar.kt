@@ -2,9 +2,7 @@ package com.example.savingmoney.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -34,8 +32,7 @@ fun BottomNavigationBar(
     val items = listOf(
         NavItem(Destinations.Home, Icons.Filled.Home, "Tổng Quan"),
         NavItem(Destinations.TransactionList, Icons.Filled.List, "Giao Dịch"),
-        // Mục trống để tạo không gian cho FAB
-        NavItem("", Icons.Filled.Add, ""), 
+        NavItem("", Icons.Filled.Add, ""), // mục trống cho FAB
         NavItem(Destinations.Planning, Icons.Filled.Star, "Kế Hoạch"),
         NavItem(Destinations.Settings, Icons.Filled.Settings, "Cài Đặt"),
     )
@@ -43,7 +40,7 @@ fun BottomNavigationBar(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(80.dp), 
+            .height(80.dp),
         contentAlignment = Alignment.BottomCenter
     ) {
         // Nền kính mờ
@@ -72,12 +69,11 @@ fun BottomNavigationBar(
                 tonalElevation = 0.dp
             ) {
                 items.forEachIndexed { index, item ->
-                    // Mục ở giữa sẽ không có gì
                     if (index == 2) {
                         NavigationBarItem(
                             selected = false,
-                            onClick = { },
-                            icon = { },
+                            onClick = {},
+                            icon = {},
                             enabled = false
                         )
                     } else {
@@ -100,10 +96,9 @@ fun BottomNavigationBar(
             }
         }
 
-        // NÚT FAB ĐƯỢC ĐẶT Ở TRUNG TÂM
         FloatingActionButton(
             onClick = { onNavigate(Destinations.AddTransaction) },
-            modifier = Modifier.align(Alignment.TopCenter), // Căn chỉnh lên trên cùng của Box
+            modifier = Modifier.align(Alignment.TopCenter),
             shape = CircleShape,
             containerColor = Color(0xFF0ED2F7),
             elevation = FloatingActionButtonDefaults.elevation(8.dp)

@@ -1,21 +1,30 @@
 package com.example.savingmoney.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.example.savingmoney.ui.auth.AuthViewModel
-import com.example.savingmoney.ui.auth.LoginScreen
-import com.example.savingmoney.ui.auth.RegisterScreen
-import com.example.savingmoney.ui.auth.WelcomeScreen
+import androidx.navigation.navArgument
+import com.example.savingmoney.ui.auth.*
 import com.example.savingmoney.ui.home.HomeScreen
+import com.example.savingmoney.ui.planning.*
 import com.example.savingmoney.ui.profile.ProfileScreen
 import com.example.savingmoney.ui.settings.FaqScreen
 import com.example.savingmoney.ui.settings.SettingsScreen
 import com.example.savingmoney.ui.stats.StatsScreen
 import com.example.savingmoney.ui.transaction.AddTransactionScreen
 import com.example.savingmoney.ui.transaction.TransactionListScreen
-import androidx.compose.material3.Text
+
+// Extension để navigation không reset UI
+fun NavHostController.navigateSingleTop(route: String) {
+    this.navigate(route) {
+        launchSingleTop = true
+        restoreState = true
+        popUpTo(graph.startDestinationId) { saveState = true }
+    }
+}
 
 @Composable
 fun NavGraph(
@@ -23,24 +32,16 @@ fun NavGraph(
     startDestination: String,
     authViewModel: AuthViewModel
 ) {
-    val navigateTo: (String) -> Unit = { route ->
-        navController.navigate(route) {
-            popUpTo(Destinations.Home) { saveState = true }
-            launchSingleTop = true
-            restoreState = true
-        }
-    }
+    NavHost(navController = navController, startDestination = startDestination) {
 
-    NavHost(
-        navController = navController,
-        startDestination = startDestination
-    ) {
-
-        // ... (Các màn hình khác giữ nguyên)
-
+        // ---------------- AUTH ----------------
         composable(Destinations.Welcome) {
             WelcomeScreen(
-                onNavigateToHome = { navController.navigate(Destinations.Home) { popUpTo(Destinations.Welcome) { inclusive = true } } },
+                onNavigateToHome = {
+                    navController.navigate(Destinations.Home) {
+                        popUpTo(Destinations.Welcome) { inclusive = true }
+                    }
+                },
                 onNavigateToRegister = { navController.navigate(Destinations.Register) },
                 onNavigateToLogin = { navController.navigate(Destinations.Login) }
             )
@@ -48,63 +49,111 @@ fun NavGraph(
 
         composable(Destinations.Login) {
             LoginScreen(
-                authViewModel = authViewModel, 
-                onNavigateToHome = { navController.navigate(Destinations.Home) { popUpTo(Destinations.Login) { inclusive = true } } },
+                authViewModel = authViewModel,
+                onNavigateToHome = {
+                    navController.navigate(Destinations.Home) {
+                        popUpTo(Destinations.Login) { inclusive = true }
+                    }
+                },
                 onNavigateToRegister = { navController.navigate(Destinations.Register) }
             )
         }
 
         composable(Destinations.Register) {
             RegisterScreen(
-                authViewModel = authViewModel, 
-                onNavigateToHome = { navController.navigate(Destinations.Home) { popUpTo(Destinations.Register) { inclusive = true } } },
+                authViewModel = authViewModel,
+                onNavigateToHome = {
+                    navController.navigate(Destinations.Home) {
+                        popUpTo(Destinations.Register) { inclusive = true }
+                    }
+                },
                 onNavigateToLogin = { navController.navigate(Destinations.Login) }
             )
         }
 
+        // ---------------- HOME ----------------
         composable(Destinations.Home) {
             HomeScreen(
-                onNavigateTo = navigateTo,
+                onNavigateTo = { route -> navController.navigateSingleTop(route) },
                 onNavigateToProfile = { navController.navigate(Destinations.Profile) }
             )
         }
-        
+
+        // ---------------- TRANSACTIONS ----------------
         composable(Destinations.TransactionList) {
-            TransactionListScreen(onNavigateTo = navigateTo)
+            TransactionListScreen(
+                onNavigateTo = { route -> navController.navigateSingleTop(route) }
+            )
         }
 
+        composable(Destinations.AddTransaction) {
+            AddTransactionScreen(
+                onNavigateUp = { navController.navigateUp() },
+                onTransactionAdded = { navController.navigate(Destinations.Home) {
+                    popUpTo(Destinations.Home) { inclusive = true }
+                } }
+            )
+        }
+
+        // ---------------- PLANNING ----------------
         composable(Destinations.Planning) {
-            Text("Planning Screen - Kế hoạch Ngân sách và Mục tiêu")
+            val planViewModel: PlanViewModel = hiltViewModel()
+            PlanningListScreen(
+                currentRoute = Destinations.Planning,
+                onNavigate = { route -> navController.navigateSingleTop(route) },
+                viewModel = planViewModel,
+                onAddPlan = { navController.navigate(Destinations.AddPlan) },
+                onPlanClick = { plan -> navController.navigate("plan_detail/${plan.id}") }
+            )
         }
 
-        composable(Destinations.Stats) { 
-            StatsScreen(onNavigateUp = { navController.navigateUp() }) // Thêm hành động quay lại
+        composable(Destinations.AddPlan) {
+            val planViewModel: PlanViewModel = hiltViewModel()
+            AddPlanScreen(
+                viewModel = planViewModel,
+                onNavigateUp = { navController.popBackStack() },
+                onPlanAdded = { navController.popBackStack() }
+            )
         }
 
+        composable(
+            route = "plan_detail/{planId}",
+            arguments = listOf(navArgument("planId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val planViewModel: PlanViewModel = hiltViewModel()
+            val planId = backStackEntry.arguments?.getString("planId") ?: ""
+            PlanDetailScreen(
+                planId = planId,
+                viewModel = planViewModel,
+                onBack = { navController.popBackStack() },
+                onDeletePlan = { id ->
+                    planViewModel.deletePlan(id)
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        // ---------------- STATS ----------------
+        composable(Destinations.Stats) {
+            StatsScreen(onNavigateUp = { navController.navigateUp() })
+        }
+
+        // ---------------- SETTINGS ----------------
         composable(Destinations.Settings) {
             SettingsScreen(
-                authViewModel = authViewModel, 
+                authViewModel = authViewModel,
                 onNavigateUp = { navController.navigateUp() },
                 onNavigateToProfile = { navController.navigate(Destinations.Profile) },
                 onNavigateToFaq = { navController.navigate(Destinations.Faq) }
             )
         }
 
+        // ---------------- PROFILE ----------------
         composable(Destinations.Profile) {
             ProfileScreen(onNavigateUp = { navController.navigateUp() })
         }
 
-        composable(Destinations.AddTransaction) {
-            AddTransactionScreen(
-                onNavigateUp = { navController.navigateUp() },
-                onTransactionAdded = {
-                    navController.navigate(Destinations.Home) {
-                        popUpTo(Destinations.Home) { inclusive = true }
-                    }
-                }
-            )
-        }
-
+        // ---------------- FAQ ----------------
         composable(Destinations.Faq) {
             FaqScreen(onNavigateUp = { navController.navigateUp() })
         }

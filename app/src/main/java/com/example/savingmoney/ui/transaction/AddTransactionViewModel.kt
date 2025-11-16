@@ -50,8 +50,14 @@ class AddTransactionViewModel @Inject constructor(
             Category(name = "Tiền điện", type = TransactionType.EXPENSE, iconName = "Bolt"),
             Category(name = "Tiền nước", type = TransactionType.EXPENSE, iconName = "WaterDrop"),
             Category(name = "Học phí", type = TransactionType.EXPENSE, iconName = "School"),
-            Category(name = "Chi phí phát sinh", type = TransactionType.EXPENSE, iconName = "AddBusiness")
+            Category(name = "Chi phí phát sinh", type = TransactionType.EXPENSE, iconName = "AddBusiness"),
+            Category(name = "Mua sắm", type = TransactionType.EXPENSE, iconName = "ShoppingCart"),
+            Category(name = "Giải trí", type = TransactionType.EXPENSE, iconName = "Movie"),
+            Category(name = "Cafe & Đồ uống", type = TransactionType.EXPENSE, iconName = "Cafe"),
+            Category(name = "Sức khỏe", type = TransactionType.EXPENSE, iconName = "FitnessCenter"),
+
         )
+
         val incomeCategories = listOf(
             Category(name = "Lương", type = TransactionType.INCOME, iconName = "AccountBalanceWallet"),
             Category(name = "Thưởng", type = TransactionType.INCOME, iconName = "MilitaryTech"),

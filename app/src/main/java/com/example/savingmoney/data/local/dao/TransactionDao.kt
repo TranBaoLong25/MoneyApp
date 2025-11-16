@@ -19,6 +19,8 @@ data class IncomeExpenseSummary(
 
 @Dao
 interface TransactionDao {
+    @Query("SELECT * FROM transactions WHERE userId = :userId")
+    suspend fun getAllTransactionsOnce(userId: String): List<Transaction>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertTransaction(transaction: Transaction)

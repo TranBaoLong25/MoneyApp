@@ -17,21 +17,20 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.text.font.FontWeight
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.savingmoney.data.model.Category
 import com.example.savingmoney.data.model.Plan
 import com.example.savingmoney.data.model.TransactionType
 import com.example.savingmoney.ui.components.BottomNavigationBar
 import com.example.savingmoney.utils.FormatUtils
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.width
 import kotlin.math.absoluteValue
 
-// Mảng màu cho danh mục
 private val categoryColors = listOf(
     Color(0xFFE57373), Color(0xFF64B5F6), Color(0xFFFFB74D), Color(0xFF81C784),
     Color(0xFFBA68C8), Color(0xFFFF8A65), Color(0xFFA1887F), Color(0xFF4DB6AC),
@@ -50,62 +49,79 @@ fun PlanningListScreen(
     val expenseByCategory by viewModel.expenseByCategory.collectAsState()
     val expenseCategories by viewModel.expenseCategories.collectAsState()
 
-    // Giữ trạng thái scroll
     val columnState = rememberLazyListState()
     val rowState = rememberLazyListState()
 
-    Box(modifier = Modifier.fillMaxSize().background(Color(0xFFF5F6FA))) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(Color(0xFFF7F9FC), Color(0xFFB2FEFA))
+                )
+            )
+    ) {
         Column(modifier = Modifier.fillMaxSize()) {
+
 
             LazyColumn(
                 state = columnState,
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(16.dp),
+                modifier = Modifier.weight(1f).padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
+                item {
+                    Text("Kế hoạch chi tiêu", style = MaterialTheme.typography.titleLarge)
+                }
 
-                // Header
-                item { Text("Kế hoạch chi tiêu", style = MaterialTheme.typography.titleLarge) }
-
-                // Tổng quan
+                // ========= TỔNG QUAN =========
                 item {
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(16.dp),
                         colors = CardDefaults.cardColors(Color.White)
                     ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            SummaryRow("Tổng Thu nhập", uiState.income, Color(0xFF2E7D32))
-                            Spacer(Modifier.height(8.dp))
-                            SummaryRow("Tổng Chi tiêu", uiState.expense, MaterialTheme.colorScheme.error)
-                            Spacer(Modifier.height(8.dp))
-                            val netBalance = uiState.income - uiState.expense
-                            val netColor = when {
-                                netBalance < 0 -> Color.Red
-                                netBalance > 0 -> Color(0xFF2E7D32)
-                                else -> Color.Gray
+                        Column(Modifier.padding(16.dp)) {
+                            if (uiState.transactions.isEmpty()) {
+                                Text(
+                                    "Chưa có giao dịch nào",
+                                    fontSize = 14.sp,
+                                    color = Color.Gray
+                                )
+                            } else {
+                                SummaryRow("Tổng Thu nhập", uiState.income, Color(0xFF2E7D32))
+                                Spacer(Modifier.height(8.dp))
+                                SummaryRow("Tổng Chi tiêu", uiState.expense, MaterialTheme.colorScheme.error)
+                                Spacer(Modifier.height(8.dp))
+                                val netBalance = uiState.income - uiState.expense
+                                val netColor = when {
+                                    netBalance < 0 -> Color.Red
+                                    netBalance > 0 -> Color(0xFF2E7D32)
+                                    else -> Color.Gray
+                                }
+                                SummaryRow("Lãi/Lỗ", netBalance, netColor)
                             }
-                            SummaryRow("Lãi/Lỗ", netBalance, netColor)
                         }
                     }
                 }
 
-                // Pie chart + tip
+                // ========= BIỂU ĐỒ + TIPS =========
                 item {
                     Card(
                         modifier = Modifier.fillMaxWidth().height(260.dp),
                         shape = RoundedCornerShape(16.dp),
                         colors = CardDefaults.cardColors(Color.White)
                     ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
+                        Column(Modifier.padding(16.dp)) {
                             PieChartWithCategoryList(expenseByCategory)
                             Spacer(Modifier.height(16.dp))
+
                             val tipColor = when {
+                                uiState.transactions.isEmpty() -> Color(0xFFF5F5F5)
                                 uiState.expense > uiState.income -> Color(0xFFFFCDD2)
                                 uiState.expense > 0.7 * uiState.income -> Color(0xFFFFF9C4)
                                 else -> Color(0xFFC8E6C9)
                             }
+
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
                                 colors = CardDefaults.cardColors(tipColor),
@@ -115,7 +131,7 @@ fun PlanningListScreen(
                                     verticalAlignment = Alignment.CenterVertically,
                                     modifier = Modifier.padding(16.dp)
                                 ) {
-                                    if (uiState.expense > uiState.income) {
+                                    if (!uiState.smartTip.isNullOrEmpty() && uiState.expense > uiState.income) {
                                         Icon(
                                             imageVector = Icons.Default.Warning,
                                             contentDescription = "Cảnh báo",
@@ -123,47 +139,71 @@ fun PlanningListScreen(
                                         )
                                         Spacer(modifier = Modifier.width(8.dp))
                                     }
-                                    Text(uiState.smartTip.ifEmpty { "Chưa có giao dịch nào" })
+                                    Text(
+                                        if (uiState.transactions.isEmpty()) "Chưa có giao dịch nào"
+                                        else uiState.smartTip
+                                    )
                                 }
                             }
                         }
                     }
                 }
 
-                // Danh sách kế hoạch
+                // ========= DANH SÁCH KẾ HOẠCH =========
                 item {
-                    Column {
-                        Card(
-                            modifier = Modifier.fillMaxWidth().height(250.dp),
-                            shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(Color.White)
-                        ) {
-                            Column(modifier = Modifier.padding(16.dp)) {
-                                Text(
-                                    text = "Kế hoạch của bạn",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    modifier = Modifier.padding(bottom = 8.dp)
-                                )
+                    Card(
+                        modifier = Modifier.fillMaxWidth().height(250.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(Color.White)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                text = "Kế hoạch của bạn",
+                                style = MaterialTheme.typography.titleMedium,
+                                modifier = Modifier.padding(bottom = 8.dp)
+                            )
 
-                                LazyRow(
-                                    state = rowState,
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                                ) {
+                            LazyRow(
+                                state = rowState,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                // 🔹 Nếu KHÔNG có kế hoạch: chỉ hiện 1 card khuyến khích tạo mới
+                                if (uiState.plans.isEmpty()) {
+                                    item {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(160.dp)
+                                                .background(Color(0xFFF0F0F0), RoundedCornerShape(20.dp))
+                                                .clickable { onAddPlan() },
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                text = "Chưa có kế hoạch\nNhấn để tạo mới!",
+                                                fontSize = 14.sp,
+                                                fontWeight = FontWeight.Medium,
+                                                color = Color.Gray
+                                            )
+                                        }
+                                    }
+                                } else {
+                                    // 🔹 Danh sách kế hoạch
                                     items(
                                         items = uiState.plans,
-                                        key = { it.id } // <-- quan trọng để Compose giữ state
+                                        key = { it.id }
                                     ) { plan ->
                                         val category = expenseCategories.firstOrNull { it.name == plan.title }
                                             ?: Category(name = plan.title, type = TransactionType.EXPENSE, iconName = "Label")
 
                                         val colorIndex = expenseCategories.indexOfFirst { it.name == category.name }
                                             .takeIf { it >= 0 } ?: (plan.title.hashCode().absoluteValue % categoryColors.size)
+
                                         val cardColor = categoryColors[colorIndex]
 
                                         val totalBudget = plan.budgetAmount
                                         val used = plan.usedAmount
                                         val remaining = (totalBudget - used).coerceAtLeast(0.0)
                                         val progress = if (totalBudget > 0) (used / totalBudget).toFloat().coerceIn(0f, 1f) else 0f
+
                                         val statusText = when {
                                             used > totalBudget -> "Vượt mức!"
                                             remaining == 0.0 -> "Đã dùng hết"
@@ -179,21 +219,31 @@ fun PlanningListScreen(
                                             remaining = remaining,
                                             progress = progress,
                                             statusText = statusText
-                                        ) { onPlanClick(plan) }
+                                        ) {
+                                            onPlanClick(plan)
+                                        }
+                                    }
+
+                                    // 🔹 Nút thêm kế hoạch nằm ngang ở cuối
+                                    item {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(160.dp)
+                                                .background(Color(0xFFE3F2FD), RoundedCornerShape(20.dp))
+                                                .clickable { onAddPlan() },
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                text = "+ Thêm kế hoạch",
+                                                fontSize = 14.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color(0xFF1976D2)
+                                            )
+                                        }
                                     }
                                 }
-
-
                             }
                         }
-
-                        Spacer(modifier = Modifier.height(4.dp))
-
-                        Button(
-                            onClick = onAddPlan,
-                            modifier = Modifier.fillMaxWidth().height(50.dp),
-                            shape = RoundedCornerShape(12.dp)
-                        ) { Text("+ Thêm kế hoạch") }
                     }
                 }
             }
@@ -203,11 +253,13 @@ fun PlanningListScreen(
     }
 }
 
-// ------------------- HỖ TRỢ -------------------
 @Composable
 fun SummaryRow(label: String, amount: Double, color: Color) {
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-        Text(label, modifier = Modifier.weight(1f))
+    Row(
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+
+    Text(label, modifier = Modifier.weight(1f))
         Text(amount.formatVNĐ(), color = color, fontSize = 14.sp)
     }
 }
@@ -236,31 +288,26 @@ fun PlanCardSquare(
             modifier = Modifier.fillMaxSize().padding(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            // Phần icon + vòng tròn tiến độ
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
+                modifier = Modifier.fillMaxWidth().weight(1f),
                 contentAlignment = Alignment.Center
             ) {
                 Canvas(modifier = Modifier.size(60.dp)) {
-                    // Vòng tròn nền trắng
                     drawArc(
                         color = Color.White.copy(alpha = 0.3f),
                         startAngle = 0f,
                         sweepAngle = 360f,
                         useCenter = false,
-                        style = androidx.compose.ui.graphics.drawscope.Stroke(8f)
+                        style = Stroke(8f)
                     )
 
-                    // Vòng tiến độ nếu có
                     if (used > 0) {
                         drawArc(
                             color = if (used > totalBudget) Color.Red else Color.White,
                             startAngle = -90f,
                             sweepAngle = progress * 360f,
                             useCenter = false,
-                            style = androidx.compose.ui.graphics.drawscope.Stroke(8f)
+                            style = Stroke(8f)
                         )
                     }
                 }
@@ -276,7 +323,7 @@ fun PlanCardSquare(
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = plan.title,
+                plan.title,
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
@@ -284,7 +331,7 @@ fun PlanCardSquare(
             )
 
             Text(
-                text = statusText,
+                statusText,
                 style = MaterialTheme.typography.bodySmall,
                 color = if (used > totalBudget) Color.Red else Color.Black.copy(alpha = 0.9f),
                 fontSize = 12.sp
@@ -293,12 +340,23 @@ fun PlanCardSquare(
     }
 }
 
-
-
 @Composable
 fun PieChartWithCategoryList(expenseByCategory: List<Pair<Category, Double>>) {
+    if (expenseByCategory.isEmpty()) {
+        Box(
+            modifier = Modifier.fillMaxWidth().height(160.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                "Chưa có dữ liệu chi tiêu",
+                color = Color.Gray,
+                fontSize = 14.sp
+            )
+        }
+        return
+    }
+
     val totalExpense = expenseByCategory.sumOf { it.second }.coerceAtLeast(1.0)
-    val colors = categoryColors
 
     Row(modifier = Modifier.fillMaxWidth()) {
         Canvas(modifier = Modifier.size(160.dp)) {
@@ -306,7 +364,7 @@ fun PieChartWithCategoryList(expenseByCategory: List<Pair<Category, Double>>) {
             expenseByCategory.forEachIndexed { index, (_, amount) ->
                 val sweep = (amount / totalExpense * 360).toFloat()
                 drawArc(
-                    color = colors[index % colors.size],
+                    color = categoryColors[index % categoryColors.size],
                     startAngle = startAngle,
                     sweepAngle = sweep,
                     useCenter = true
@@ -322,7 +380,7 @@ fun PieChartWithCategoryList(expenseByCategory: List<Pair<Category, Double>>) {
             modifier = Modifier.height(160.dp).weight(1f)
         ) {
             items(expenseByCategory) { (category, amount) ->
-                val colorIndex = expenseByCategory.indexOfFirst { it.first.name == category.name } % colors.size
+                val colorIndex = expenseByCategory.indexOfFirst { it.first.name == category.name } % categoryColors.size
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
@@ -330,7 +388,11 @@ fun PieChartWithCategoryList(expenseByCategory: List<Pair<Category, Double>>) {
                         .background(Color.White, RoundedCornerShape(8.dp))
                         .padding(8.dp)
                 ) {
-                    Icon(imageVector = category.getIcon(), contentDescription = category.name, tint = colors[colorIndex])
+                    Icon(
+                        imageVector = category.getIcon(),
+                        contentDescription = category.name,
+                        tint = categoryColors[colorIndex]
+                    )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(category.name, modifier = Modifier.weight(1f), fontSize = 14.sp)
                     Text(amount.formatVNĐ(), fontSize = 12.sp)
@@ -340,5 +402,4 @@ fun PieChartWithCategoryList(expenseByCategory: List<Pair<Category, Double>>) {
     }
 }
 
-// ------------------ EXTENSIONS ------------------
 fun Double.formatVNĐ(): String = "%,.0f₫".format(this)

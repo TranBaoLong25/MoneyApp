@@ -1,5 +1,8 @@
 package com.example.savingmoney.ui.auth
 
+import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -20,13 +23,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.example.savingmoney.R
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 
 @Composable
 fun LoginScreen(
@@ -38,6 +43,29 @@ fun LoginScreen(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+    var localError by remember { mutableStateOf<String?>(null) }
+
+    val context = LocalContext.current
+
+    // Google Sign-In setup
+    val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+        .requestIdToken(context.getString(R.string.default_web_client_id))
+        .requestEmail()
+        .build()
+    val googleSignInClient = GoogleSignIn.getClient(context, gso)
+
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+        try {
+            val account = task.getResult(Exception::class.java)
+            account?.idToken?.let { idToken ->
+                authViewModel.signInWithGoogle(idToken)
+            }
+        } catch (e: Exception) {
+            Log.e("LoginScreen", "Google Sign-In Failed", e)
+            localError = "Đăng nhập Google thất bại!"
+        }
+    }
 
     LaunchedEffect(uiState.isAuthenticated) {
         if (uiState.isAuthenticated) {
@@ -121,7 +149,7 @@ fun LoginScreen(
                             Text("ĐĂNG NHẬP", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                         }
                     }
-                    
+
                     uiState.error?.let {
                         Text(
                             text = it,
@@ -131,36 +159,37 @@ fun LoginScreen(
                     }
                 }
             }
-            
+
             item {
-                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(32.dp) ){
-                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        HorizontalDivider(modifier = Modifier.weight(1f), color = Color.White.copy(alpha = 0.2f)) // SỬA
+                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(32.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        HorizontalDivider(modifier = Modifier.weight(1f), color = Color.White.copy(alpha = 0.2f))
                         Text(" Hoặc ", color = Color.White.copy(alpha = 0.7f), modifier = Modifier.padding(horizontal = 8.dp))
-                        HorizontalDivider(modifier = Modifier.weight(1f), color = Color.White.copy(alpha = 0.2f)) // SỬA
+                        HorizontalDivider(modifier = Modifier.weight(1f), color = Color.White.copy(alpha = 0.2f))
                     }
                     Spacer(modifier = Modifier.height(24.dp))
-                    OutlinedButton(
-                        onClick = { /* TODO: Handle Google Sign In */ },
-                        modifier = Modifier.fillMaxWidth(),
+                    Button(
+                        onClick = { launcher.launch(googleSignInClient.signInIntent) },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.White),
                         shape = RoundedCornerShape(16.dp),
-                        contentPadding = PaddingValues(vertical = 14.dp),
-                        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.5f))
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .shadow(4.dp, RoundedCornerShape(16.dp))
                     ) {
-                        // Icon(
-                        //     painter = painterResource(id = R.drawable.ic_google_logo), // TẠM THỜI COMMENT
-                        //     contentDescription = "Google Logo", 
-                        //     modifier = Modifier.size(24.dp),
-                        //     tint = Color.Unspecified
-                        // )
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Text("Tiếp tục với Google", fontWeight = FontWeight.Bold, color = Color.White)
+                        Text("Đăng nhập bằng Google", color = Color.Black, fontWeight = FontWeight.Bold)
+                    }
+                    localError?.let {
+                        Text(
+                            text = it,
+                            color = Color(0xFFFFC107),
+                            modifier = Modifier.padding(top = 8.dp)
+                        )
                     }
                 }
             }
 
             item {
-                 Row(
+                Row(
                     modifier = Modifier.padding(bottom = 32.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {

@@ -21,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -44,7 +45,6 @@ fun AddPlanScreen(
     var selectedCategory by remember { mutableStateOf<Category?>(null) }
     var budgetInput by remember { mutableStateOf("") }
 
-    // 12 màu cố định
     val categoryColors = listOf(
         Color(0xFFE57373), Color(0xFF64B5F6), Color(0xFFFFB74D), Color(0xFF81C784),
         Color(0xFFBA68C8), Color(0xFFFF8A65), Color(0xFFA1887F), Color(0xFF4DB6AC),
@@ -52,10 +52,15 @@ fun AddPlanScreen(
     )
 
     Scaffold(
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
                 title = { Text("Thêm Kế Hoạch", fontWeight = FontWeight.Bold) },
-                navigationIcon = { IconButton(onClick = onNavigateUp) { Icon(Icons.Filled.ArrowBack, "Quay lại") } }
+                navigationIcon = {
+                    IconButton(onClick = onNavigateUp) {
+                        Icon(Icons.Filled.ArrowBack, contentDescription = "Quay lại")
+                    }
+                }
             )
         },
         bottomBar = {
@@ -71,7 +76,6 @@ fun AddPlanScreen(
                         return@Button
                     }
 
-                    // Kiểm tra trùng tên kế hoạch
                     val existingPlanNames = viewModel.uiState.value.plans.map { it.title }
                     if (selectedCategory!!.name in existingPlanNames) {
                         Toast.makeText(context, "Kế hoạch đã tồn tại, vui lòng chọn danh mục khác", Toast.LENGTH_SHORT).show()
@@ -104,46 +108,60 @@ fun AddPlanScreen(
                 Text("LƯU KẾ HOẠCH", fontWeight = FontWeight.Bold)
             }
         }
-    ) { padding ->
-        Column(
+    ) { paddingValues ->
+
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
-                .padding(horizontal = 24.dp)
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(Color(0xFFF7F9FC), Color(0xFFB2FEFA))
+                    )
+                )
+                .padding(paddingValues)
         ) {
-            Text("Chọn danh mục", style = MaterialTheme.typography.titleMedium)
-            Spacer(modifier = Modifier.height(16.dp))
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp)
+            ) {
+                Text("Chọn danh mục", style = MaterialTheme.typography.titleMedium)
+                Spacer(modifier = Modifier.height(12.dp)) // giảm từ 16 -> 12
 
-            Box(modifier = Modifier.weight(1f)) {
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(3),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier.fillMaxSize()
+                    verticalArrangement = Arrangement.spacedBy(8.dp), // giảm khoảng cách hàng
+                    horizontalArrangement = Arrangement.spacedBy(8.dp), // giảm khoảng cách cột
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
                 ) {
                     items(expenseCategories.take(12)) { category ->
                         val isSelected = category == selectedCategory
                         val colorIndex = expenseCategories.indexOf(category) % categoryColors.size
 
-                        // Animation
                         val animatedBgColor by animateColorAsState(
-                            targetValue = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                            targetValue = if (isSelected)
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
                             else categoryColors[colorIndex]
                         )
-                        val scale by animateFloatAsState(targetValue = if (isSelected) 1.05f else 1f)
+                        val scale by animateFloatAsState(if (isSelected) 1.05f else 1f)
                         val borderColor by animateColorAsState(
-                            targetValue = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent
+                            targetValue = if (isSelected)
+                                MaterialTheme.colorScheme.primary
+                            else Color.Transparent
                         )
 
                         Column(
                             modifier = Modifier
-                                .fillMaxWidth()
+                                .aspectRatio(1f)
                                 .clickable { selectedCategory = category }
                                 .scale(scale)
                                 .background(animatedBgColor, shape = RoundedCornerShape(16.dp))
                                 .border(3.dp, borderColor, RoundedCornerShape(16.dp))
-                                .padding(vertical = 16.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
+                                .padding(6.dp), // giảm padding bên trong
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
                         ) {
                             Box(
                                 modifier = Modifier
@@ -159,35 +177,36 @@ fun AddPlanScreen(
                                     modifier = Modifier.size(32.dp)
                                 )
                             }
-                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Spacer(modifier = Modifier.height(4.dp)) // giảm khoảng cách icon -> text
+
                             Text(
                                 text = category.name,
                                 textAlign = TextAlign.Center,
-                                style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                             )
                         }
                     }
                 }
+
+                Spacer(modifier = Modifier.height(8.dp)) // giảm từ 16 -> 8
+
+                if (selectedCategory != null) {
+                    OutlinedTextField(
+                        value = budgetInput,
+                        onValueChange = { input ->
+                            val filtered = input.filter { it.isDigit() || it == '.' }
+                            if (filtered.count { it == '.' } <= 1) budgetInput = filtered
+                        },
+                        label = { Text("Nhập ngân sách cho ${selectedCategory!!.name}") },
+                        placeholder = { Text("Ví dụ: 100000") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(8.dp)) // giảm khoảng cách cuối
             }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            if (selectedCategory != null) {
-                OutlinedTextField(
-                    value = budgetInput,
-                    onValueChange = { input ->
-                        val filtered = input.filter { it.isDigit() || it == '.' }
-                        if (filtered.count { it == '.' } <= 1) budgetInput = filtered
-                    },
-                    label = { Text("Nhập ngân sách cho ${selectedCategory!!.name}") },
-                    placeholder = { Text("Ví dụ: 100000") }, // <-- Thêm ví dụ ngân sách
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }

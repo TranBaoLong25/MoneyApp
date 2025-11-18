@@ -35,18 +35,18 @@ class PlanViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val hardcodedExpenseCategories = listOf(
-        Category(name = "Ăn uống", type = TransactionType.EXPENSE, iconName = "Restaurant"),
-        Category(name = "Đi lại", type = TransactionType.EXPENSE, iconName = "Commute"),
-        Category(name = "Hóa đơn", type = TransactionType.EXPENSE, iconName = "ReceiptLong"),
-        Category(name = "Tiền nhà", type = TransactionType.EXPENSE, iconName = "HomeWork"),
-        Category(name = "Tiền điện", type = TransactionType.EXPENSE, iconName = "Bolt"),
-        Category(name = "Tiền nước", type = TransactionType.EXPENSE, iconName = "WaterDrop"),
-        Category(name = "Học phí", type = TransactionType.EXPENSE, iconName = "School"),
-        Category(name = "Chi phí phát sinh", type = TransactionType.EXPENSE, iconName = "AddBusiness"),
-        Category(name = "Mua sắm", type = TransactionType.EXPENSE, iconName = "ShoppingCart"),
-        Category(name = "Giải trí", type = TransactionType.EXPENSE, iconName = "Movie"),
-        Category(name = "Cafe & Đồ uống", type = TransactionType.EXPENSE, iconName = "Cafe"),
-        Category(name = "Sức khỏe", type = TransactionType.EXPENSE, iconName = "FitnessCenter")
+        Category(name = "Ăn uống", type = TransactionType.EXPENSE, iconName = "Restaurant", color = "#FF5733"),
+        Category(name = "Đi lại", type = TransactionType.EXPENSE, iconName = "Commute", color = "#FFC300"),
+        Category(name = "Hóa đơn", type = TransactionType.EXPENSE, iconName = "ReceiptLong", color = "#C70039"),
+        Category(name = "Tiền nhà", type = TransactionType.EXPENSE, iconName = "HomeWork", color = "#900C3F"),
+        Category(name = "Tiền điện", type = TransactionType.EXPENSE, iconName = "Bolt", color = "#581845"),
+        Category(name = "Tiền nước", type = TransactionType.EXPENSE, iconName = "WaterDrop", color = "#2E86C1"),
+        Category(name = "Học phí", type = TransactionType.EXPENSE, iconName = "School", color = "#17A589"),
+        Category(name = "Chi phí phát sinh", type = TransactionType.EXPENSE, iconName = "AddBusiness", color = "#F1C40F"),
+        Category(name = "Mua sắm", type = TransactionType.EXPENSE, iconName = "ShoppingCart", color = "#E67E22"),
+        Category(name = "Giải trí", type = TransactionType.EXPENSE, iconName = "Movie", color = "#AF7AC5"),
+        Category(name = "Cafe & Đồ uống", type = TransactionType.EXPENSE, iconName = "Cafe", color = "#99A3A4"),
+        Category(name = "Sức khỏe", type = TransactionType.EXPENSE, iconName = "FitnessCenter", color = "#2ECC71")
     )
 
     val expenseCategories: StateFlow<List<Category>> = MutableStateFlow(hardcodedExpenseCategories)
@@ -71,7 +71,7 @@ class PlanViewModel @Inject constructor(
             val plansWithCats = updatedPlans.map { plan ->
                 val categories = plan.categoryBudgets.keys.map { catName ->
                     hardcodedExpenseCategories.find { it.name == catName }
-                        ?: Category(name = catName, type = TransactionType.EXPENSE, iconName = "Label")
+                        ?: Category(name = catName, type = TransactionType.EXPENSE, iconName = "Label", color = "#808080")
                 }
                 PlanWithCategories(plan, categories)
             }
@@ -105,7 +105,7 @@ class PlanViewModel @Inject constructor(
             .groupBy { it.categoryName.ifEmpty { "Khác" } }
             .map { (name, list) ->
                 val category = hardcodedExpenseCategories.find { it.name == name }
-                    ?: Category(name = name, type = TransactionType.EXPENSE, iconName = "Label")
+                    ?: Category(name = name, type = TransactionType.EXPENSE, iconName = "Label", color = "#808080")
                 category to list.sumOf { it.amount }
             }
         _expenseByCategory.value = grouped

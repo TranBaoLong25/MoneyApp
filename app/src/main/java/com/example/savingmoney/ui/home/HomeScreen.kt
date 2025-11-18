@@ -29,6 +29,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.savingmoney.data.model.Category
 import com.example.savingmoney.data.model.CategoryStatistic
 import com.example.savingmoney.data.model.Transaction
 import com.example.savingmoney.data.model.TransactionType
@@ -96,7 +97,8 @@ fun HomeScreen(
                     item {
                         RecentTransactionsSection(
                             transactions = uiState.recentTransactions,
-                            onViewAll = { onNavigateTo(Destinations.TransactionList) }
+                            onViewAll = { onNavigateTo(Destinations.TransactionList) },
+                            categories = uiState.allCategories
                         )
                     }
                     item { Spacer(modifier = Modifier.height(80.dp)) }
@@ -282,7 +284,7 @@ fun StatsSection(stats: List<CategoryStatistic>, onViewAll: () -> Unit) {
 }
 
 @Composable
-fun RecentTransactionsSection(transactions: List<Transaction>, onViewAll: () -> Unit) {
+fun RecentTransactionsSection(transactions: List<Transaction>, onViewAll: () -> Unit, categories: List<Category>) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -315,7 +317,7 @@ fun RecentTransactionsSection(transactions: List<Transaction>, onViewAll: () -> 
                     )
                 } else {
                     transactions.forEachIndexed { index, tx ->
-                        TransactionRow(tx)
+                        TransactionRow(tx, categories)
                         if (index < transactions.lastIndex) {
                             HorizontalDivider(
                                 color = Color.LightGray.copy(alpha = 0.4f),
@@ -351,10 +353,12 @@ fun getIconForCategory(category: String): ImageVector {
 }
 
 @Composable
-fun TransactionRow(tx: Transaction) {
+fun TransactionRow(tx: Transaction, categories: List<Category>) {
+    val category = categories.find { it.name == tx.categoryName }
     val color = if (tx.type == TransactionType.INCOME) Color(0xFF2E7D32) else Color(0xFFD32F2F)
     val prefix = if (tx.type == TransactionType.INCOME) "+" else "-"
-    val icon = getIconForCategory(tx.categoryName)
+    val icon = category?.getIcon() ?: getIconForCategory(tx.categoryName)
+    val iconColor = category?.getColor() ?: MaterialTheme.colorScheme.onSecondaryContainer
 
     Row(
         modifier = Modifier
@@ -367,13 +371,13 @@ fun TransactionRow(tx: Transaction) {
             modifier = Modifier
                 .size(48.dp)
                 .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f)),
+                .background(iconColor.copy(alpha = 0.1f)),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = tx.categoryName,
-                tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                tint = iconColor,
                 modifier = Modifier.size(24.dp)
             )
         }

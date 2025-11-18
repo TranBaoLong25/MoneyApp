@@ -156,7 +156,7 @@ fun AddTransactionScreen(
             )
             Spacer(modifier = Modifier.height(24.dp))
 
-            InfoRow(icon = uiState.selectedCategory?.getIcon(), text = uiState.selectedCategory?.name ?: "Chọn hạng mục", onClick = { showCategorySheet = true })
+            InfoRow(icon = uiState.selectedCategory?.getIcon(), iconColor = uiState.selectedCategory?.getColor(), text = uiState.selectedCategory?.name ?: "Chọn hạng mục", onClick = { showCategorySheet = true })
             Divider(modifier = Modifier.padding(vertical = 8.dp), color = Color.Gray.copy(alpha = 0.2f))
             InfoRow(icon = Icons.Default.DateRange, text = formatDate(uiState.selectedDate), onClick = { showDatePicker = true })
             Divider(modifier = Modifier.padding(vertical = 8.dp), color = Color.Gray.copy(alpha = 0.2f))
@@ -189,10 +189,15 @@ fun CategorySelectionSheet(categories: List<Category>, onCategorySelected: (Cate
                         modifier = Modifier
                             .size(64.dp)
                             .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.secondaryContainer),
+                            .background(category.getColor().copy(alpha = 0.2f)),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(imageVector = category.getIcon(), contentDescription = category.name, modifier = Modifier.size(32.dp))
+                        Icon(
+                            imageVector = category.getIcon(), 
+                            contentDescription = category.name, 
+                            modifier = Modifier.size(32.dp),
+                            tint = category.getColor()
+                        )
                     }
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(category.name, textAlign = TextAlign.Center, style = MaterialTheme.typography.bodyMedium)
@@ -203,7 +208,7 @@ fun CategorySelectionSheet(categories: List<Category>, onCategorySelected: (Cate
 }
 
 @Composable
-fun InfoRow(icon: ImageVector?, text: String, onClick: () -> Unit) {
+fun InfoRow(icon: ImageVector?, iconColor: Color? = MaterialTheme.colorScheme.onSurfaceVariant, text: String, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -212,7 +217,7 @@ fun InfoRow(icon: ImageVector?, text: String, onClick: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         icon?.let {
-            Icon(imageVector = it, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(28.dp))
+            Icon(imageVector = it, contentDescription = null, tint = iconColor ?: MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(28.dp))
             Spacer(modifier = Modifier.width(16.dp))
         }
         Text(text, style = MaterialTheme.typography.bodyLarge)

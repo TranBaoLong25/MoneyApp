@@ -28,6 +28,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.savingmoney.data.model.Category
 import com.example.savingmoney.data.model.Transaction
 import com.example.savingmoney.data.model.TransactionType
 import com.example.savingmoney.ui.components.BottomNavigationBar
@@ -98,7 +99,7 @@ fun TransactionListScreen(
                     ) {
                         groupedTransactions.forEach { (date, transactions) ->
                             item {
-                                TransactionGroup(date = date, transactions = transactions)
+                                TransactionGroup(date = date, transactions = transactions, categories = uiState.categories)
                             }
                         }
                     }
@@ -133,7 +134,7 @@ fun FilterChips(selectedType: TransactionType?, onFilterSelected: (TransactionTy
 }
 
 @Composable
-fun TransactionGroup(date: String, transactions: List<Transaction>) {
+fun TransactionGroup(date: String, transactions: List<Transaction>, categories: List<Category>) {
     Column {
         Text(
             text = date,
@@ -149,7 +150,7 @@ fun TransactionGroup(date: String, transactions: List<Transaction>) {
         ) {
             Column {
                 transactions.forEachIndexed { index, tx ->
-                    TransactionRow(tx = tx)
+                    TransactionRow(tx = tx, categories = categories)
                     if (index < transactions.lastIndex) {
                         HorizontalDivider(color = Color.LightGray.copy(alpha = 0.4f), modifier = Modifier.padding(horizontal = 16.dp))
                     }

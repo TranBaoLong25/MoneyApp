@@ -192,7 +192,7 @@ fun PlanningListScreen(
                                         key = { it.id }
                                     ) { plan ->
                                         val category = expenseCategories.firstOrNull { it.name == plan.title }
-                                            ?: Category(name = plan.title, type = TransactionType.EXPENSE, iconName = "Label")
+                                            ?: Category(name = plan.title, type = TransactionType.EXPENSE, iconName = "Label", color = "#808080")
 
                                         val colorIndex = expenseCategories.indexOfFirst { it.name == category.name }
                                             .takeIf { it >= 0 } ?: (plan.title.hashCode().absoluteValue % categoryColors.size)

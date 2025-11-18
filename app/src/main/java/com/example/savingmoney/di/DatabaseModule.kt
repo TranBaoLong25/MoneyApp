@@ -3,8 +3,7 @@ package com.example.savingmoney.di
 import android.content.Context
 import androidx.room.Room
 import com.example.savingmoney.data.local.AppDatabase
-import com.example.savingmoney.data.local.dao.CategoryDao
-import com.example.savingmoney.data.local.dao.TransactionDao
+import com.example.savingmoney.data.local.MIGRATION_1_2
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -23,16 +22,12 @@ object DatabaseModule {
             context,
             AppDatabase::class.java,
             "saving_money_database"
-        ).fallbackToDestructiveMigration().build()
+        ).addMigrations(MIGRATION_1_2).build()
     }
 
     @Provides
-    fun provideCategoryDao(appDatabase: AppDatabase): CategoryDao {
-        return appDatabase.categoryDao()
-    }
+    fun provideCategoryDao(appDatabase: AppDatabase) = appDatabase.categoryDao()
 
     @Provides
-    fun provideTransactionDao(appDatabase: AppDatabase): TransactionDao {
-        return appDatabase.transactionDao()
-    }
+    fun provideTransactionDao(appDatabase: AppDatabase) = appDatabase.transactionDao()
 }

@@ -43,26 +43,26 @@ class AddTransactionViewModel @Inject constructor(
 
     private fun loadCategories() {
         val expenseCategories = listOf(
-            Category(name = "Ăn uống", type = TransactionType.EXPENSE, iconName = "Restaurant"),
-            Category(name = "Đi lại", type = TransactionType.EXPENSE, iconName = "Commute"),
-            Category(name = "Hóa đơn", type = TransactionType.EXPENSE, iconName = "ReceiptLong"),
-            Category(name = "Tiền nhà", type = TransactionType.EXPENSE, iconName = "HomeWork"),
-            Category(name = "Tiền điện", type = TransactionType.EXPENSE, iconName = "Bolt"),
-            Category(name = "Tiền nước", type = TransactionType.EXPENSE, iconName = "WaterDrop"),
-            Category(name = "Học phí", type = TransactionType.EXPENSE, iconName = "School"),
-            Category(name = "Chi phí phát sinh", type = TransactionType.EXPENSE, iconName = "AddBusiness"),
-            Category(name = "Mua sắm", type = TransactionType.EXPENSE, iconName = "ShoppingCart"),
-            Category(name = "Giải trí", type = TransactionType.EXPENSE, iconName = "Movie"),
-            Category(name = "Cafe & Đồ uống", type = TransactionType.EXPENSE, iconName = "Cafe"),
-            Category(name = "Sức khỏe", type = TransactionType.EXPENSE, iconName = "FitnessCenter"),
+            Category(name = "Ăn uống", type = TransactionType.EXPENSE, iconName = "Restaurant", color = "#FF5733"),
+            Category(name = "Đi lại", type = TransactionType.EXPENSE, iconName = "Commute", color = "#FFC300"),
+            Category(name = "Hóa đơn", type = TransactionType.EXPENSE, iconName = "ReceiptLong", color = "#C70039"),
+            Category(name = "Tiền nhà", type = TransactionType.EXPENSE, iconName = "HomeWork", color = "#900C3F"),
+            Category(name = "Tiền điện", type = TransactionType.EXPENSE, iconName = "Bolt", color = "#581845"),
+            Category(name = "Tiền nước", type = TransactionType.EXPENSE, iconName = "WaterDrop", color = "#2E86C1"),
+            Category(name = "Học phí", type = TransactionType.EXPENSE, iconName = "School", color = "#17A589"),
+            Category(name = "Chi phí phát sinh", type = TransactionType.EXPENSE, iconName = "AddBusiness", color = "#F1C40F"),
+            Category(name = "Mua sắm", type = TransactionType.EXPENSE, iconName = "ShoppingCart", color = "#E67E22"),
+            Category(name = "Giải trí", type = TransactionType.EXPENSE, iconName = "Movie", color = "#AF7AC5"),
+            Category(name = "Cafe & Đồ uống", type = TransactionType.EXPENSE, iconName = "Cafe", color = "#99A3A4"),
+            Category(name = "Sức khỏe", type = TransactionType.EXPENSE, iconName = "FitnessCenter", color = "#2ECC71"),
 
         )
 
         val incomeCategories = listOf(
-            Category(name = "Lương", type = TransactionType.INCOME, iconName = "AccountBalanceWallet"),
-            Category(name = "Thưởng", type = TransactionType.INCOME, iconName = "MilitaryTech"),
-            Category(name = "Đầu tư", type = TransactionType.INCOME, iconName = "TrendingUp"),
-            Category(name = "Quà tặng", type = TransactionType.INCOME, iconName = "CardGiftcard")
+            Category(name = "Lương", type = TransactionType.INCOME, iconName = "AccountBalanceWallet", color = "#27AE60"),
+            Category(name = "Thưởng", type = TransactionType.INCOME, iconName = "MilitaryTech", color = "#F39C12"),
+            Category(name = "Đầu tư", type = TransactionType.INCOME, iconName = "TrendingUp", color = "#2980B9"),
+            Category(name = "Quà tặng", type = TransactionType.INCOME, iconName = "CardGiftcard", color = "#D35400")
         )
 
         _uiState.update {

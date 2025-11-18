@@ -3,6 +3,7 @@ package com.example.savingmoney.ui.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.savingmoney.data.local.dao.IncomeExpenseSummary
+import com.example.savingmoney.data.model.Category
 import com.example.savingmoney.data.model.CategoryStatistic
 import com.example.savingmoney.data.model.Transaction
 import com.example.savingmoney.data.model.TransactionType
@@ -26,6 +27,7 @@ data class HomeUiState(
     val monthlySummary: IncomeExpenseSummary = IncomeExpenseSummary(0.0, 0.0),
     val monthlyStats: List<CategoryStatistic> = emptyList(),
     val recentTransactions: List<Transaction> = emptyList(),
+    val allCategories: List<Category> = emptyList(),
     val isLoading: Boolean = true,
     val error: String? = null
 )
@@ -38,6 +40,30 @@ class HomeViewModel @Inject constructor(
 
     // Lấy thông tin người dùng từ Firebase
     private val currentUser = firebaseAuth.currentUser
+
+    private val expenseCategories = listOf(
+        Category(name = "Ăn uống", type = TransactionType.EXPENSE, iconName = "Restaurant", color = "#FF5733"),
+        Category(name = "Đi lại", type = TransactionType.EXPENSE, iconName = "Commute", color = "#FFC300"),
+        Category(name = "Hóa đơn", type = TransactionType.EXPENSE, iconName = "ReceiptLong", color = "#C70039"),
+        Category(name = "Tiền nhà", type = TransactionType.EXPENSE, iconName = "HomeWork", color = "#900C3F"),
+        Category(name = "Tiền điện", type = TransactionType.EXPENSE, iconName = "Bolt", color = "#581845"),
+        Category(name = "Tiền nước", type = TransactionType.EXPENSE, iconName = "WaterDrop", color = "#2E86C1"),
+        Category(name = "Học phí", type = TransactionType.EXPENSE, iconName = "School", color = "#17A589"),
+        Category(name = "Chi phí phát sinh", type = TransactionType.EXPENSE, iconName = "AddBusiness", color = "#F1C40F"),
+        Category(name = "Mua sắm", type = TransactionType.EXPENSE, iconName = "ShoppingCart", color = "#E67E22"),
+        Category(name = "Giải trí", type = TransactionType.EXPENSE, iconName = "Movie", color = "#AF7AC5"),
+        Category(name = "Cafe & Đồ uống", type = TransactionType.EXPENSE, iconName = "Cafe", color = "#99A3A4"),
+        Category(name = "Sức khỏe", type = TransactionType.EXPENSE, iconName = "FitnessCenter", color = "#2ECC71"),
+
+        )
+
+    private val incomeCategories = listOf(
+        Category(name = "Lương", type = TransactionType.INCOME, iconName = "AccountBalanceWallet", color = "#27AE60"),
+        Category(name = "Thưởng", type = TransactionType.INCOME, iconName = "MilitaryTech", color = "#F39C12"),
+        Category(name = "Đầu tư", type = TransactionType.INCOME, iconName = "TrendingUp", color = "#2980B9"),
+        Category(name = "Quà tặng", type = TransactionType.INCOME, iconName = "CardGiftcard", color = "#D35400")
+    )
+    private val allCategories = expenseCategories + incomeCategories
 
     // Kết hợp tất cả các luồng dữ liệu cần thiết
     val uiState: StateFlow<HomeUiState> = combine(
@@ -87,6 +113,7 @@ class HomeViewModel @Inject constructor(
             monthlySummary = monthlySummary,
             monthlyStats = monthlyStats.take(5), // Chỉ lấy 5 hạng mục chi tiêu nhiều nhất
             recentTransactions = recentTransactions,
+            allCategories = allCategories,
             isLoading = false // Dữ liệu đã được tải xong
         )
     }.stateIn(

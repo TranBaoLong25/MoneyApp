@@ -2,8 +2,7 @@
 <resources>
     <string name="app_name">SavingMoneyApp</string>
     <string name="default_web_client_id">
-        714995779967-1bvmsavo376e1u5sq1q4u8rg2rt68as1.apps.googleusercontent.com
-    </string>
+714995779967-1bvmsavo376e1u5sq1q4u8rg2rt68as1.apps.googleusercontent.com    </string>
 
     <!-- Settings Screen -->
     <string name="settings_title">Cài Đặt Ứng Dụng</string>

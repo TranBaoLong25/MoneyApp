@@ -141,10 +141,15 @@ fun NavGraph(
         // ---------------- SETTINGS ----------------
         composable(Destinations.Settings) {
             SettingsScreen(
-                authViewModel = authViewModel,
-                onNavigateUp = { navController.navigateUp() },
-                onNavigateToProfile = { navController.navigate(Destinations.Profile) },
-                onNavigateToFaq = { navController.navigate(Destinations.Faq) }
+                currentRoute = Destinations.Settings,
+                onNavigate = { route -> navController.navigateSingleTop(route) },
+                onLogout = {
+                    authViewModel.signOut()
+                    navController.navigate(Destinations.Welcome) {
+                        popUpTo(Destinations.Home) { inclusive = true }
+                    }
+                },
+                onNavigateToProfile = { navController.navigate(Destinations.Profile) }
             )
         }
 

@@ -8,6 +8,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.UserProfileChangeRequest
 import com.google.firebase.storage.FirebaseStorage
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -18,6 +19,7 @@ import javax.inject.Inject
 data class ProfileUiState(
     val displayName: String = "",
     val email: String = "",
+    val phoneNumber: String = "",
     val photoUrl: String? = null,
     val isLoading: Boolean = false,
     val successMessage: String? = null,
@@ -37,12 +39,13 @@ class ProfileViewModel @Inject constructor(
         loadCurrentUser()
     }
 
-    private fun loadCurrentUser() {
+    fun loadCurrentUser() {
         val user = firebaseAuth.currentUser
         _uiState.update {
             it.copy(
                 displayName = user?.displayName ?: "",
                 email = user?.email ?: "",
+                phoneNumber = user?.phoneNumber ?: "",
                 photoUrl = user?.photoUrl?.toString()
             )
         }
@@ -95,7 +98,6 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
-    // ✅ HÀM MỚI ĐỂ THAY ĐỔI TÊN HIỂN THỊ
     fun updateDisplayName(newName: String) {
         viewModelScope.launch {
             if (newName.isBlank()) {
@@ -118,6 +120,43 @@ class ProfileViewModel @Inject constructor(
                 }
             } catch (e: Exception) {
                 _uiState.update { it.copy(isLoading = false, errorMessage = e.localizedMessage ?: "Cập nhật thất bại.") }
+            }
+        }
+    }
+
+    fun updateEmail(password: String, newEmail: String) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, errorMessage = null, successMessage = null) }
+            try {
+                val user = firebaseAuth.currentUser!!
+                val credential = EmailAuthProvider.getCredential(user.email!!, password)
+
+                user.reauthenticate(credential).await()
+                user.updateEmail(newEmail).await()
+
+                _uiState.update { it.copy(isLoading = false, email = newEmail, successMessage = "Cập nhật email thành công!") }
+
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isLoading = false, errorMessage = e.localizedMessage ?: "Cập nhật email thất bại.") }
+            }
+        }
+    }
+
+    fun updatePhoneNumber(phone: String) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, errorMessage = null, successMessage = null) }
+            try {
+                // This is a mock update and does not persist to Firebase.
+                delay(500)
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        phoneNumber = phone,
+                        successMessage = "Cập nhật số điện thoại thành công!"
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isLoading = false, errorMessage = "Cập nhật thất bại.") }
             }
         }
     }

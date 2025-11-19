@@ -64,6 +64,8 @@ fun ProfileScreen(
     val context = LocalContext.current
     var showChangePasswordDialog by remember { mutableStateOf(false) }
     var showChangeNameDialog by remember { mutableStateOf(false) }
+    var showChangeEmailDialog by remember { mutableStateOf(false) }
+    var showChangePhoneDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(uiState.successMessage, uiState.errorMessage) {
         uiState.successMessage?.let {
@@ -93,6 +95,27 @@ fun ProfileScreen(
             onConfirm = { newName ->
                 viewModel.updateDisplayName(newName)
                 showChangeNameDialog = false
+            }
+        )
+    }
+
+    if (showChangeEmailDialog) {
+        UpdateEmailDialog(
+            onDismiss = { showChangeEmailDialog = false },
+            onConfirm = { password, newEmail ->
+                viewModel.updateEmail(password, newEmail)
+                showChangeEmailDialog = false
+            }
+        )
+    }
+
+    if (showChangePhoneDialog) {
+        UpdatePhoneDialog(
+            currentPhone = uiState.phoneNumber,
+            onDismiss = { showChangePhoneDialog = false },
+            onConfirm = { newPhone ->
+                viewModel.updatePhoneNumber(newPhone)
+                showChangePhoneDialog = false
             }
         )
     }
@@ -133,9 +156,9 @@ fun ProfileScreen(
                         settings = {
                             SettingsClickableItem(title = "Tên hiển thị", icon = Icons.Default.Badge, currentValue = uiState.displayName, onClick = { showChangeNameDialog = true })
                             HorizontalDivider(color = MaterialTheme.colorScheme.background)
-                            SettingsClickableItem(title = "Địa chỉ Email", icon = Icons.Default.AlternateEmail, currentValue = uiState.email, onClick = { /*TODO*/ })
+                            SettingsClickableItem(title = "Địa chỉ Email", icon = Icons.Default.AlternateEmail, currentValue = uiState.email, onClick = { showChangeEmailDialog = true })
                             HorizontalDivider(color = MaterialTheme.colorScheme.background)
-                            SettingsClickableItem(title = "Số điện thoại", icon = Icons.Default.Phone, currentValue = "Chưa có", onClick = { /*TODO*/ })
+                            SettingsClickableItem(title = "Số điện thoại", icon = Icons.Default.Phone, currentValue = uiState.phoneNumber.ifBlank { "Chưa có" }, onClick = { showChangePhoneDialog = true })
                         }
                     )
                 }
@@ -176,6 +199,49 @@ fun ProfileScreen(
 }
 
 @Composable
+fun UpdateEmailDialog(onDismiss: () -> Unit, onConfirm: (String, String) -> Unit) {
+    var password by remember { mutableStateOf("") }
+    var newEmail by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Thay đổi địa chỉ Email") },
+        text = {
+            Column {
+                OutlinedTextField(value = newEmail, onValueChange = { newEmail = it }, label = { Text("Email mới") }, modifier = Modifier.fillMaxWidth())
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(value = password, onValueChange = { password = it }, label = { Text("Mật khẩu hiện tại") }, visualTransformation = PasswordVisualTransformation(), modifier = Modifier.fillMaxWidth())
+            }
+        },
+        confirmButton = {
+            Button(onClick = { onConfirm(password, newEmail) }) { Text("Xác nhận") }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Hủy") }
+        }
+    )
+}
+
+@Composable
+fun UpdatePhoneDialog(currentPhone: String, onDismiss: () -> Unit, onConfirm: (String) -> Unit) {
+    var newPhone by remember { mutableStateOf(currentPhone) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Cập nhật số điện thoại") },
+        text = {
+            OutlinedTextField(value = newPhone, onValueChange = { newPhone = it }, label = { Text("Số điện thoại") }, modifier = Modifier.fillMaxWidth())
+        },
+        confirmButton = {
+            Button(onClick = { onConfirm(newPhone) }) { Text("Xác nhận") }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Hủy") }
+        }
+    )
+}
+
+@Composable
 fun ChangeDisplayNameDialog(currentName: String, onDismiss: () -> Unit, onConfirm: (String) -> Unit) {
     var newName by remember { mutableStateOf(currentName) }
 
@@ -183,10 +249,10 @@ fun ChangeDisplayNameDialog(currentName: String, onDismiss: () -> Unit, onConfir
         onDismissRequest = onDismiss,
         title = { Text("Thay đổi tên hiển thị") },
         text = {
-            TextField(value = newName, onValueChange = { newName = it }, label = { Text("Tên mới") })
+            OutlinedTextField(value = newName, onValueChange = { newName = it }, label = { Text("Tên mới") }, modifier = Modifier.fillMaxWidth())
         },
         confirmButton = {
-            TextButton(onClick = { onConfirm(newName) }) { Text("Xác nhận") }
+            Button(onClick = { onConfirm(newName) }) { Text("Xác nhận") }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text("Hủy") }
@@ -206,16 +272,16 @@ fun ChangePasswordDialog(onDismiss: () -> Unit, onConfirm: (String, String) -> U
         title = { Text("Thay đổi mật khẩu") },
         text = {
             Column {
-                TextField(value = oldPassword, onValueChange = { oldPassword = it }, label = { Text("Mật khẩu cũ") }, visualTransformation = PasswordVisualTransformation())
+                OutlinedTextField(value = oldPassword, onValueChange = { oldPassword = it }, label = { Text("Mật khẩu cũ") }, visualTransformation = PasswordVisualTransformation(), modifier = Modifier.fillMaxWidth())
                 Spacer(modifier = Modifier.height(8.dp))
-                TextField(value = newPassword, onValueChange = { newPassword = it }, label = { Text("Mật khẩu mới") }, visualTransformation = PasswordVisualTransformation())
+                OutlinedTextField(value = newPassword, onValueChange = { newPassword = it }, label = { Text("Mật khẩu mới") }, visualTransformation = PasswordVisualTransformation(), modifier = Modifier.fillMaxWidth())
                 Spacer(modifier = Modifier.height(8.dp))
-                TextField(value = confirmNewPassword, onValueChange = { confirmNewPassword = it }, label = { Text("Xác nhận mật khẩu mới") }, visualTransformation = PasswordVisualTransformation())
-                error?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
+                OutlinedTextField(value = confirmNewPassword, onValueChange = { confirmNewPassword = it }, label = { Text("Xác nhận mật khẩu mới") }, visualTransformation = PasswordVisualTransformation(), modifier = Modifier.fillMaxWidth())
+                error?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top=8.dp)) }
             }
         },
         confirmButton = {
-            TextButton(
+            Button(
                 onClick = {
                     if (newPassword.length < 6) {
                         error = "Mật khẩu mới phải có ít nhất 6 ký tự."
@@ -233,7 +299,6 @@ fun ChangePasswordDialog(onDismiss: () -> Unit, onConfirm: (String, String) -> U
     )
 }
 
-// ✅ KHÔI PHỤC LẠI CÁC HÀM BỊ MẤT
 @Composable
 private fun UserInfoHeader(
     userName: String,

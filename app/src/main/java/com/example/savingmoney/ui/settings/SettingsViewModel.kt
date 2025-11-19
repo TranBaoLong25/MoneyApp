@@ -6,6 +6,7 @@ import com.example.savingmoney.domain.usecase.GetLanguageUseCase
 import com.example.savingmoney.domain.usecase.GetThemeUseCase
 import com.example.savingmoney.domain.usecase.UpdateLanguageUseCase
 import com.example.savingmoney.domain.usecase.UpdateThemeUseCase
+import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.SharingStarted
@@ -16,13 +17,13 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-// Đơn giản hóa trạng thái - không cần isSigningOut hay errorMessage nữa
 data class SettingsUiState(
     val isDarkMode: Boolean = false,
-    val currentLanguageCode: String = "vi"
+    val currentLanguageCode: String = "vi",
+    val displayName: String = "",
+    val email: String = ""
 )
 
-// Chỉ cần sự kiện thay đổi ngôn ngữ
 sealed class SettingsEvent {
     object LanguageChanged : SettingsEvent()
 }
@@ -32,21 +33,23 @@ class SettingsViewModel @Inject constructor(
     private val getThemeUseCase: GetThemeUseCase,
     private val getLanguageUseCase: GetLanguageUseCase,
     private val updateThemeUseCase: UpdateThemeUseCase,
-    private val updateLanguageUseCase: UpdateLanguageUseCase
+    private val updateLanguageUseCase: UpdateLanguageUseCase,
+    private val firebaseAuth: FirebaseAuth
 ) : ViewModel() {
 
-    // Kênh sự kiện để gửi tín hiệu về UI (chỉ còn LanguageChanged)
     private val _settingsEventChannel = Channel<SettingsEvent>()
     val settingsEvents = _settingsEventChannel.receiveAsFlow()
 
-    // Kết hợp Theme và Language thành một StateFlow duy nhất
     val uiState: StateFlow<SettingsUiState> = combine(
         getThemeUseCase(),
         getLanguageUseCase()
     ) { isDark, langCode ->
+        val currentUser = firebaseAuth.currentUser
         SettingsUiState(
             isDarkMode = isDark,
-            currentLanguageCode = langCode
+            currentLanguageCode = langCode,
+            displayName = currentUser?.displayName ?: "",
+            email = currentUser?.email ?: ""
         )
     }.stateIn(
         scope = viewModelScope,
@@ -65,10 +68,5 @@ class SettingsViewModel @Inject constructor(
             updateLanguageUseCase(code)
             _settingsEventChannel.send(SettingsEvent.LanguageChanged)
         }
-    }
-
-    // Tạm thời giữ lại hàm này, nhưng nó không còn nhiều ý nghĩa
-    fun getCurrentUser(): String {
-        return "Long"
     }
 }

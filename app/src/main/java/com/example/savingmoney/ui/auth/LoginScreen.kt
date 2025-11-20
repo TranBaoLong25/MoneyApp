@@ -133,6 +133,28 @@ fun LoginScreen(
                         colors = authTextFieldColors()
                     )
                     Spacer(modifier = Modifier.height(24.dp))
+                    TextButton(
+                        onClick = {
+                            if (email.isBlank()) {
+                                localError = "Vui lòng nhập email trước!"
+                            } else {
+                                authViewModel.resetPassword(email) { success, message ->
+                                    localError = message
+                                }
+                            }
+                        },
+                        modifier = Modifier.align(Alignment.End) // canh phải
+                    ) {
+                        Text(
+                            text = "Quên mật khẩu?",
+                            color = Color.White.copy(alpha = 0.7f),
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(16.dp)) // giữ khoảng cách trước nút đăng nhập
+
+
+                    Spacer(modifier = Modifier.height(16.dp)) // giữ khoảng cách trước nút đăng nhập
 
                     if (uiState.isLoading) {
                         CircularProgressIndicator(color = Color.White)

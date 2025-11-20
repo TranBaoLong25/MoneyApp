@@ -32,6 +32,23 @@ class AuthViewModel @Inject constructor(
             _uiState.value = AuthUiState(isAuthenticated = false)
         }
     }
+    // --- Quên mật khẩu ---
+    fun resetPassword(email: String, onResult: (success: Boolean, message: String) -> Unit) {
+        if (email.isBlank()) {
+            onResult(false, "Vui lòng nhập email!")
+            return
+        }
+        _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+        auth.sendPasswordResetEmail(email)
+            .addOnCompleteListener { task ->
+                _uiState.value = _uiState.value.copy(isLoading = false)
+                if (task.isSuccessful) {
+                    onResult(true, "Email đặt lại mật khẩu đã được gửi.")
+                } else {
+                    onResult(false, task.exception?.localizedMessage ?: "Gửi email thất bại")
+                }
+            }
+    }
 
     // --- Đăng ký Email/Password ---
     fun signUpWithEmail(email: String, password: String) {

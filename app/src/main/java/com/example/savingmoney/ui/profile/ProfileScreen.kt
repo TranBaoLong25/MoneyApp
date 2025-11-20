@@ -82,7 +82,7 @@ fun ProfileScreen(
         ChangePasswordDialog(
             onDismiss = { showChangePasswordDialog = false },
             onConfirm = { oldPassword, newPassword ->
-                viewModel.changePassword(oldPassword, newPassword)
+                viewModel.changePassword(newPassword)
                 showChangePasswordDialog = false
             }
         )

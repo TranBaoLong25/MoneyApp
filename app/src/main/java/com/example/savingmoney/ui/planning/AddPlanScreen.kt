@@ -45,12 +45,6 @@ fun AddPlanScreen(
     var selectedCategory by remember { mutableStateOf<Category?>(null) }
     var budgetInput by remember { mutableStateOf("") }
 
-    val categoryColors = listOf(
-        Color(0xFFE57373), Color(0xFF64B5F6), Color(0xFFFFB74D), Color(0xFF81C784),
-        Color(0xFFBA68C8), Color(0xFFFF8A65), Color(0xFFA1887F), Color(0xFF4DB6AC),
-        Color(0xFFDCE775), Color(0xFF7986CB), Color(0xFFE91E63), Color(0xFF009688)
-    )
-
     Scaffold(
         containerColor = Color.Transparent,
         topBar = {
@@ -126,26 +120,28 @@ fun AddPlanScreen(
                     .padding(horizontal = 16.dp)
             ) {
                 Text("Chọn danh mục", style = MaterialTheme.typography.titleMedium)
-                Spacer(modifier = Modifier.height(12.dp)) // giảm từ 16 -> 12
+                Spacer(modifier = Modifier.height(12.dp))
 
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(3),
-                    verticalArrangement = Arrangement.spacedBy(8.dp), // giảm khoảng cách hàng
-                    horizontalArrangement = Arrangement.spacedBy(8.dp), // giảm khoảng cách cột
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f)
                 ) {
                     items(expenseCategories.take(12)) { category ->
+
                         val isSelected = category == selectedCategory
-                        val colorIndex = expenseCategories.indexOf(category) % categoryColors.size
 
                         val animatedBgColor by animateColorAsState(
                             targetValue = if (isSelected)
-                                MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
-                            else categoryColors[colorIndex]
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)
+                            else category.getColor().copy(alpha = 0.22f)
                         )
+
                         val scale by animateFloatAsState(if (isSelected) 1.05f else 1f)
+
                         val borderColor by animateColorAsState(
                             targetValue = if (isSelected)
                                 MaterialTheme.colorScheme.primary
@@ -154,12 +150,13 @@ fun AddPlanScreen(
 
                         Column(
                             modifier = Modifier
-                                .aspectRatio(1f)
+                                .fillMaxWidth()
+                                .height(120.dp)
                                 .clickable { selectedCategory = category }
                                 .scale(scale)
                                 .background(animatedBgColor, shape = RoundedCornerShape(16.dp))
                                 .border(3.dp, borderColor, RoundedCornerShape(16.dp))
-                                .padding(6.dp), // giảm padding bên trong
+                                .padding(6.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.Center
                         ) {
@@ -167,29 +164,34 @@ fun AddPlanScreen(
                                 modifier = Modifier
                                     .size(56.dp)
                                     .clip(CircleShape)
-                                    .background(if (isSelected) MaterialTheme.colorScheme.primary else Color.White),
+                                    .background(
+                                        if (isSelected) MaterialTheme.colorScheme.primary
+                                        else Color.White
+                                    ),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
                                     category.getIcon(),
                                     contentDescription = category.name,
-                                    tint = if (isSelected) Color.White else categoryColors[colorIndex],
+                                    tint = if (isSelected) Color.White else category.getColor(),
                                     modifier = Modifier.size(32.dp)
                                 )
                             }
 
-                            Spacer(modifier = Modifier.height(4.dp)) // giảm khoảng cách icon -> text
+                            Spacer(modifier = Modifier.height(4.dp))
 
                             Text(
                                 text = category.name,
                                 textAlign = TextAlign.Center,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                maxLines = 2,
+                                softWrap = true
                             )
                         }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(8.dp)) // giảm từ 16 -> 8
+                Spacer(modifier = Modifier.height(8.dp))
 
                 if (selectedCategory != null) {
                     OutlinedTextField(
@@ -205,7 +207,7 @@ fun AddPlanScreen(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(8.dp)) // giảm khoảng cách cuối
+                Spacer(modifier = Modifier.height(8.dp))
             }
         }
     }

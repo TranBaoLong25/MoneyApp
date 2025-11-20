@@ -29,13 +29,6 @@ import com.example.savingmoney.data.model.Plan
 import com.example.savingmoney.data.model.TransactionType
 import com.example.savingmoney.ui.components.BottomNavigationBar
 import com.example.savingmoney.utils.FormatUtils
-import kotlin.math.absoluteValue
-
-private val categoryColors = listOf(
-    Color(0xFFE57373), Color(0xFF64B5F6), Color(0xFFFFB74D), Color(0xFF81C784),
-    Color(0xFFBA68C8), Color(0xFFFF8A65), Color(0xFFA1887F), Color(0xFF4DB6AC),
-    Color(0xFFDCE775), Color(0xFF7986CB), Color(0xFFE91E63), Color(0xFF009688)
-)
 
 @Composable
 fun PlanningListScreen(
@@ -62,8 +55,6 @@ fun PlanningListScreen(
             )
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
-
-
             LazyColumn(
                 state = columnState,
                 modifier = Modifier.weight(1f).padding(16.dp),
@@ -167,7 +158,6 @@ fun PlanningListScreen(
                                 state = rowState,
                                 horizontalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
-                                // 🔹 Nếu KHÔNG có kế hoạch: chỉ hiện 1 card khuyến khích tạo mới
                                 if (uiState.plans.isEmpty()) {
                                     item {
                                         Box(
@@ -180,25 +170,16 @@ fun PlanningListScreen(
                                             Text(
                                                 text = "Chưa có kế hoạch\nNhấn để tạo mới!",
                                                 fontSize = 14.sp,
-                                                fontWeight = FontWeight.Medium,
                                                 color = Color.Gray
                                             )
                                         }
                                     }
                                 } else {
-                                    // 🔹 Danh sách kế hoạch
-                                    items(
-                                        items = uiState.plans,
-                                        key = { it.id }
-                                    ) { plan ->
+                                    items(uiState.plans, key = { it.id }) { plan ->
                                         val category = expenseCategories.firstOrNull { it.name == plan.title }
                                             ?: Category(name = plan.title, type = TransactionType.EXPENSE, iconName = "Label", color = "#808080")
 
-                                        val colorIndex = expenseCategories.indexOfFirst { it.name == category.name }
-                                            .takeIf { it >= 0 } ?: (plan.title.hashCode().absoluteValue % categoryColors.size)
-
-                                        val cardColor = categoryColors[colorIndex]
-
+                                        val cardColor = category.getColor()
                                         val totalBudget = plan.budgetAmount
                                         val used = plan.usedAmount
                                         val remaining = (totalBudget - used).coerceAtLeast(0.0)
@@ -224,7 +205,7 @@ fun PlanningListScreen(
                                         }
                                     }
 
-                                    // 🔹 Nút thêm kế hoạch nằm ngang ở cuối
+                                    // Nút thêm kế hoạch
                                     item {
                                         Box(
                                             modifier = Modifier
@@ -236,7 +217,6 @@ fun PlanningListScreen(
                                             Text(
                                                 text = "+ Thêm kế hoạch",
                                                 fontSize = 14.sp,
-                                                fontWeight = FontWeight.Bold,
                                                 color = Color(0xFF1976D2)
                                             )
                                         }
@@ -255,11 +235,8 @@ fun PlanningListScreen(
 
 @Composable
 fun SummaryRow(label: String, amount: Double, color: Color) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-
-    Text(label, modifier = Modifier.weight(1f))
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(label, modifier = Modifier.weight(1f))
         Text(amount.formatVNĐ(), color = color, fontSize = 14.sp)
     }
 }
@@ -324,7 +301,6 @@ fun PlanCardSquare(
 
             Text(
                 plan.title,
-                style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
                 color = Color.Black
@@ -332,7 +308,6 @@ fun PlanCardSquare(
 
             Text(
                 statusText,
-                style = MaterialTheme.typography.bodySmall,
                 color = if (used > totalBudget) Color.Red else Color.Black.copy(alpha = 0.9f),
                 fontSize = 12.sp
             )
@@ -358,13 +333,16 @@ fun PieChartWithCategoryList(expenseByCategory: List<Pair<Category, Double>>) {
 
     val totalExpense = expenseByCategory.sumOf { it.second }.coerceAtLeast(1.0)
 
-    Row(modifier = Modifier.fillMaxWidth()) {
+    Row(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        // PieChart
         Canvas(modifier = Modifier.size(160.dp)) {
             var startAngle = -90f
-            expenseByCategory.forEachIndexed { index, (_, amount) ->
+            expenseByCategory.forEach { (category, amount) ->
                 val sweep = (amount / totalExpense * 360).toFloat()
                 drawArc(
-                    color = categoryColors[index % categoryColors.size],
+                    color = category.getColor(),
                     startAngle = startAngle,
                     sweepAngle = sweep,
                     useCenter = true
@@ -375,12 +353,12 @@ fun PieChartWithCategoryList(expenseByCategory: List<Pair<Category, Double>>) {
 
         Spacer(modifier = Modifier.width(16.dp))
 
+        // Danh sách danh mục
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier.height(160.dp).weight(1f)
         ) {
             items(expenseByCategory) { (category, amount) ->
-                val colorIndex = expenseByCategory.indexOfFirst { it.first.name == category.name } % categoryColors.size
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
@@ -391,11 +369,25 @@ fun PieChartWithCategoryList(expenseByCategory: List<Pair<Category, Double>>) {
                     Icon(
                         imageVector = category.getIcon(),
                         contentDescription = category.name,
-                        tint = categoryColors[colorIndex]
+                        tint = category.getColor(),
+                        modifier = Modifier.size(24.dp)
                     )
+
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(category.name, modifier = Modifier.weight(1f), fontSize = 14.sp)
-                    Text(amount.formatVNĐ(), fontSize = 12.sp)
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = category.name,
+                            fontSize = 14.sp,
+                            maxLines = 2,
+                            softWrap = true
+                        )
+                        Text(
+                            text = amount.formatVNĐ(),
+                            fontSize = 12.sp,
+                            color = Color.Gray
+                        )
+                    }
                 }
             }
         }

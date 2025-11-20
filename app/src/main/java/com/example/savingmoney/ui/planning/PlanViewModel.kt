@@ -78,7 +78,7 @@ class PlanViewModel @Inject constructor(
 
             val totalIncome = transactions.filter { it.type == TransactionType.INCOME }.sumOf { it.amount }
             val totalExpense = transactions.filter { it.type == TransactionType.EXPENSE }.sumOf { it.amount }
-            val tip = if (totalExpense > totalIncome) "Tiêu xài quá đà! Lập kế hoạch ngay." else "Chi tiêu ổn định, tiếp tục duy trì!"
+            val tip = if (totalExpense > totalIncome) "Tiêu xài quá đà!" else "Chi tiêu ổn định"
 
             PlanningUiState(
                 plans = updatedPlans,

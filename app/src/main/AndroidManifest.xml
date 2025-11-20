@@ -1,13 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.savingmoney">
 
     <application
         android:name=".MainApplication"
-        android:label="SavingMoneyApp"
-        android:allowBackup="true">
-
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.SavingMoneyApp">
         <activity
-            android:name="com.example.savingmoney.ui.MainActivity"
+            android:name=".ui.MainActivity"
             android:exported="true"
             android:theme="@style/Theme.SavingMoneyApp">
             <intent-filter>
@@ -16,4 +20,5 @@
             </intent-filter>
         </activity>
     </application>
+
 </manifest>

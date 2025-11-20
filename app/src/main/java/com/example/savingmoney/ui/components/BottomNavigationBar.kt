@@ -1,26 +1,25 @@
 package com.example.savingmoney.ui.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.savingmoney.ui.navigation.Destinations
 
 data class NavItem(
     val route: String,
-    val icon: ImageVector,
+    val icon: androidx.compose.ui.graphics.vector.ImageVector,
     val label: String
 )
 
@@ -29,84 +28,89 @@ fun BottomNavigationBar(
     currentRoute: String,
     onNavigate: (String) -> Unit
 ) {
+    val configuration = LocalConfiguration.current
+    val screenWidth = configuration.screenWidthDp
+    val scale = screenWidth / 360f  // scale theo width chuẩn 360dp
+
     val items = listOf(
         NavItem(Destinations.Home, Icons.Filled.Home, "Tổng Quan"),
         NavItem(Destinations.TransactionList, Icons.Filled.List, "Giao Dịch"),
-        NavItem("", Icons.Filled.Add, ""), // mục trống cho FAB
+        NavItem("", Icons.Filled.Add, ""), // slot cho FAB
         NavItem(Destinations.Planning, Icons.Filled.Star, "Kế Hoạch"),
-        NavItem(Destinations.Settings, Icons.Filled.Settings, "Cài Đặt"),
+        NavItem(Destinations.Settings, Icons.Filled.Settings, "Cài Đặt")
     )
+
+    val itemWidth = (screenWidth / items.size).dp
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(80.dp),
+            .height(80.dp * scale),
         contentAlignment = Alignment.BottomCenter
     ) {
-        // Nền kính mờ
+        // Nền nav
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(72.dp)
-                .shadow(
-                    elevation = 20.dp,
-                    shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-                    ambientColor = Color.White.copy(alpha = 0.3f),
-                    spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-                )
-                .clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
-                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.9f))
-                .border(
-                    width = 1.dp,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f),
-                    shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
-                ),
-            contentAlignment = Alignment.BottomCenter
+                .height(72.dp * scale)
+                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)),
+            contentAlignment = Alignment.Center
         ) {
-            NavigationBar(
-                modifier = Modifier.fillMaxWidth(),
-                containerColor = Color.Transparent,
-                tonalElevation = 0.dp
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 4.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 items.forEachIndexed { index, item ->
                     if (index == 2) {
-                        NavigationBarItem(
-                            selected = false,
-                            onClick = {},
-                            icon = {},
-                            enabled = false
-                        )
+                        Spacer(modifier = Modifier.width(itemWidth)) // slot cho FAB
                     } else {
                         val isSelected = currentRoute.startsWith(item.route)
-                        NavigationBarItem(
-                            icon = { Icon(item.icon, contentDescription = item.label) },
-                            label = { Text(item.label) },
-                            selected = isSelected,
-                            onClick = { if (currentRoute != item.route) onNavigate(item.route) },
-                            colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = MaterialTheme.colorScheme.primary,
-                                selectedTextColor = MaterialTheme.colorScheme.primary,
-                                indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
-                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
-                                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                        Column(
+                            modifier = Modifier
+                                .width(itemWidth)
+                                .clickable { if (currentRoute != item.route) onNavigate(item.route) },
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                imageVector = item.icon,
+                                contentDescription = item.label,
+                                modifier = Modifier.size(24.dp * scale),
+                                tint = if (isSelected) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
                             )
-                        )
+                            Text(
+                                text = item.label,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                fontSize = 10.sp * scale,
+                                color = if (isSelected) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                            )
+                        }
                     }
                 }
             }
         }
 
+        // FAB nổi giữa
         FloatingActionButton(
             onClick = { onNavigate(Destinations.AddTransaction) },
-            modifier = Modifier.align(Alignment.TopCenter),
-            shape = CircleShape,
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .offset(y = (-28.dp * scale)),
             containerColor = Color(0xFF0ED2F7),
-            elevation = FloatingActionButtonDefaults.elevation(8.dp)
+            elevation = FloatingActionButtonDefaults.elevation(8.dp),
+            shape = CircleShape
         ) {
             Icon(
                 Icons.Filled.Add,
                 contentDescription = "Thêm Giao Dịch",
-                tint = Color.White
+                tint = Color.White,
+                modifier = Modifier.size(28.dp * scale)
             )
         }
     }

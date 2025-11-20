@@ -91,6 +91,8 @@ fun HomeScreen(
                     item { 
                         StatsSection(
                             stats = uiState.monthlyStats,
+                            categories = uiState.allCategories, // thêm dòng này
+
                             onViewAll = { onNavigateTo(Destinations.Stats) }
                         ) 
                     }
@@ -226,7 +228,11 @@ fun IncomeExpenseItem(label: String, amount: Double, icon: ImageVector, backgrou
 }
 
 @Composable
-fun StatsSection(stats: List<CategoryStatistic>, onViewAll: () -> Unit) {
+fun StatsSection(
+    stats: List<CategoryStatistic>,
+    categories: List<Category>, // danh sách tất cả categories
+    onViewAll: () -> Unit
+) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -254,6 +260,10 @@ fun StatsSection(stats: List<CategoryStatistic>, onViewAll: () -> Unit) {
             Text("Chưa có dữ liệu thống kê.", color = MaterialTheme.colorScheme.onSurfaceVariant)
         } else {
             stats.forEach { stat ->
+                val category = categories.firstOrNull { it.name == stat.category }
+                val color = category?.getColor() ?: MaterialTheme.colorScheme.primary
+                val icon = category?.getIcon() ?: Icons.Default.Label
+
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -262,9 +272,12 @@ fun StatsSection(stats: List<CategoryStatistic>, onViewAll: () -> Unit) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        getIconForCategory(stat.category).let {
-                            Icon(imageVector = it, contentDescription = stat.category, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
-                        }
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = stat.category,
+                            modifier = Modifier.size(20.dp),
+                            tint = color
+                        )
                         Spacer(Modifier.width(12.dp))
                         Text(
                             stat.category,
@@ -274,7 +287,7 @@ fun StatsSection(stats: List<CategoryStatistic>, onViewAll: () -> Unit) {
                     }
                     Text(
                         formatCurrency(stat.amount),
-                        color = MaterialTheme.colorScheme.error,
+                        color = color, // dùng màu của category
                         style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold)
                     )
                 }

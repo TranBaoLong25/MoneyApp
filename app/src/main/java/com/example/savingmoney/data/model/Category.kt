@@ -53,7 +53,22 @@ data class Category(
         }
     }
 
-    fun getColor(): Color {
-        return Color(android.graphics.Color.parseColor(color))
+    fun getColor(alpha: Float = 0.8f, brightnessFactor: Float = 1.3f): Color {
+        return try {
+            // Chuyển màu hex sang HSV
+            val c = android.graphics.Color.parseColor(color)
+            val hsv = FloatArray(3)
+            android.graphics.Color.colorToHSV(c, hsv)
+
+            // Tăng độ sáng (value) để màu nhạt hơn, pastel hơn
+            hsv[2] = (hsv[2] * brightnessFactor).coerceIn(0f, 1f)
+
+            // Trả về Color Compose với alpha tùy chỉnh
+            Color(android.graphics.Color.HSVToColor((alpha * 255).toInt(), hsv))
+        } catch (e: Exception) {
+            // Nếu parse lỗi, trả về màu xám nhạt
+            Color.LightGray.copy(alpha = alpha)
+        }
     }
+
 }

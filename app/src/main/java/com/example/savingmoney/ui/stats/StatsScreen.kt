@@ -12,6 +12,8 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.TrendingDown
+import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -27,6 +29,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -103,7 +106,7 @@ fun StatsScreen(
                         val categoryColors = remember { generateCategoryColors(summary.expenseByCategory.keys.toList()) }
 
                         Spacer(modifier = Modifier.height(16.dp))
-                        SummaryCard(summary, mainTextColor, iconColor)
+                        SummaryCard(summary)
                         Spacer(modifier = Modifier.height(24.dp))
                         CategoryAnalysisCard(summary, categoryColors, mainTextColor, iconColor)
                         Spacer(modifier = Modifier.height(24.dp))
@@ -127,37 +130,109 @@ fun StatsScreen(
 
 @Composable
 fun SummaryCard(
-    summary: TransactionSummary,
-    textColor: Color,
-    iconColor: Color
+    summary: TransactionSummary
 ) {
-    val netColor = if (summary.netBalance >= 0) Color(0xFF2E7D32) else Color(0xFFFF5252)
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
-        elevation = CardDefaults.cardElevation(4.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        shape = RoundedCornerShape(28.dp),
+        elevation = CardDefaults.cardElevation(8.dp)
     ) {
-        Column(modifier = Modifier.padding(24.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .background(iconColor.copy(alpha = 0.1f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(Icons.Default.AccountBalanceWallet, contentDescription = "Tổng quan", tint = iconColor)
+        Box(
+            modifier = Modifier
+                .background(
+                    Brush.linearGradient(
+                        colors = listOf(Color(0xFF005B96), Color(0xFF0ED2F7))
+                    )
+                )
+                .padding(24.dp)
+        ) {
+            Column {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .background(Color.White.copy(alpha = 0.2f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.Default.AccountBalanceWallet,
+                            contentDescription = "Tổng quan",
+                            tint = Color.White,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        "Tổng Quan Tháng",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.White.copy(alpha = 0.9f)
+                    )
                 }
-                Spacer(modifier = Modifier.width(12.dp))
-                Text("Tổng Quan Tháng", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = textColor)
+                
+                Spacer(modifier = Modifier.height(24.dp))
+                
+                Text(
+                    text = "Số dư",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.White.copy(alpha = 0.8f)
+                )
+                Text(
+                    text = FormatUtils.formatCurrency(summary.netBalance),
+                    style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.ExtraBold),
+                    color = Color.White
+                )
+                
+                Spacer(modifier = Modifier.height(32.dp))
+                
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    StatsInfoItem(
+                        label = "Thu nhập",
+                        amount = summary.totalIncome,
+                        icon = Icons.Default.TrendingUp,
+                        color = Color(0xFF00FFA3)
+                    )
+                    StatsInfoItem(
+                        label = "Chi tiêu",
+                        amount = summary.totalExpense,
+                        icon = Icons.Default.TrendingDown,
+                        color = Color(0xFFFF5252)
+                    )
+                }
             }
-            Spacer(Modifier.height(20.dp))
-            SummaryRow("Tổng Thu nhập", summary.totalIncome, Color(0xFF00C853), textColor)
-            Spacer(Modifier.height(12.dp))
-            SummaryRow("Tổng Chi tiêu", summary.totalExpense, Color(0xFFFF5252), textColor)
-            HorizontalDivider(Modifier.padding(vertical = 16.dp), color = Color(0xFFE0E0E0))
-            SummaryRow("Số dư", summary.netBalance, netColor, textColor, isTotal = true)
+        }
+    }
+}
+
+@Composable
+fun StatsInfoItem(
+    label: String,
+    amount: Double,
+    icon: ImageVector,
+    color: Color
+) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(
+            modifier = Modifier
+                .size(44.dp)
+                .clip(CircleShape)
+                .background(Color.White.copy(alpha = 0.15f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(icon, contentDescription = label, tint = color, modifier = Modifier.size(24.dp))
+        }
+        Spacer(modifier = Modifier.width(12.dp))
+        Column {
+            Text(label, style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.8f))
+            Text(
+                FormatUtils.formatCurrency(amount),
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                color = Color.White
+            )
         }
     }
 }
@@ -192,13 +267,13 @@ fun CategoryAnalysisCard(
             Spacer(Modifier.height(20.dp))
             if (summary.expenseByCategory.isNotEmpty()) {
                 Row(
-                    modifier = Modifier.fillMaxWidth().height(200.dp),
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 200.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     CategoryBarChart(
                         expenseByCategory = summary.expenseByCategory,
                         categoryColors = categoryColors,
-                        modifier = Modifier.weight(0.4f)
+                        modifier = Modifier.weight(0.4f).height(180.dp)
                     )
                     Spacer(modifier = Modifier.width(20.dp))
                     CategoryLegend(
@@ -278,7 +353,7 @@ fun CategoryBarChart(
 ) {
     val maxValue = remember { expenseByCategory.values.maxOrNull() ?: 1.0 }
 
-    Canvas(modifier = modifier.fillMaxSize()) {
+    Canvas(modifier = modifier) {
         val barCount = expenseByCategory.size
         if (barCount == 0) return@Canvas
 
@@ -363,12 +438,14 @@ fun DailyColumnChart(
     val daysInMonth = remember {
         GregorianCalendar.getInstance().getActualMaximum(Calendar.DAY_OF_MONTH)
     }
-
-    val textPaint = remember {
+    
+    // Use LocalDensity to convert sp to px for paint text size
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    val textPaint = remember(density) {
         android.graphics.Paint().apply {
             color = android.graphics.Color.parseColor("#9E9E9E")
             textAlign = android.graphics.Paint.Align.CENTER
-            textSize = 30f
+            textSize = with(density) { 10.dp.toPx() } // Responsive text size
             isAntiAlias = true
         }
     }
@@ -413,8 +490,6 @@ fun DailyColumnChart(
                         cornerRadius = CornerRadius(4f, 4f)
                     )
 
-                    // Draw day label every 5 days or for peaks?
-                    // Drawing all might be too crowded. Let's draw every 5th day + 1st day
                     if (day == 1 || day % 5 == 0) {
                         drawContext.canvas.nativeCanvas.drawText(
                             day.toString(),
@@ -426,33 +501,5 @@ fun DailyColumnChart(
                 }
             }
         }
-    }
-}
-
-@Composable
-fun SummaryRow(
-    label: String,
-    amount: Double,
-    amountColor: Color,
-    textColor: Color,
-    isTotal: Boolean = false
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            label,
-            style = if (isTotal) MaterialTheme.typography.titleMedium else MaterialTheme.typography.bodyLarge,
-            color = if (isTotal) textColor else Color.Gray,
-            fontWeight = if (isTotal) FontWeight.Bold else FontWeight.Normal
-        )
-        Text(
-            text = FormatUtils.formatCurrency(amount),
-            color = amountColor,
-            style = if (isTotal) MaterialTheme.typography.titleLarge else MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold
-        )
     }
 }

@@ -27,11 +27,16 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.savingmoney.domain.model.TransactionSummary
 import com.example.savingmoney.utils.FormatUtils
@@ -170,9 +175,9 @@ fun SummaryCard(
                         color = Color.White.copy(alpha = 0.9f)
                     )
                 }
-                
+
                 Spacer(modifier = Modifier.height(24.dp))
-                
+
                 Text(
                     text = "Số dư",
                     style = MaterialTheme.typography.bodyMedium,
@@ -183,9 +188,9 @@ fun SummaryCard(
                     style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.ExtraBold),
                     color = Color.White
                 )
-                
+
                 Spacer(modifier = Modifier.height(32.dp))
-                
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
@@ -321,9 +326,14 @@ fun DailyHistoryCard(
                 Spacer(modifier = Modifier.width(12.dp))
                 Text("Biểu Đồ Ngày", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = textColor)
             }
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(24.dp))
             if (summary.dailyExpenses.isNotEmpty()) {
-                DailyColumnChart(dailyExpenses = summary.dailyExpenses, barColor = iconColor)
+                // Using the improved chart
+                DailyLineChart(
+                    dailyExpenses = summary.dailyExpenses,
+                    lineColor = iconColor,
+                    gradientColors = listOf(iconColor.copy(alpha = 0.4f), iconColor.copy(alpha = 0.0f))
+                )
             } else {
                 Text(
                     "Chưa có dữ liệu chi tiêu theo ngày.",
@@ -429,72 +439,129 @@ fun CategoryLegend(
 }
 
 @Composable
-fun DailyColumnChart(
+fun DailyLineChart(
     dailyExpenses: Map<Int, Double>,
-    barColor: Color,
+    lineColor: Color,
+    gradientColors: List<Color>,
     modifier: Modifier = Modifier
 ) {
-    val maxValue = remember { dailyExpenses.values.maxOrNull() ?: 1.0 }
     val daysInMonth = remember {
         GregorianCalendar.getInstance().getActualMaximum(Calendar.DAY_OF_MONTH)
     }
-    
-    // Use LocalDensity to convert sp to px for paint text size
+
+    // Prepare data points
+    val dataPoints = remember(dailyExpenses) {
+        (1..daysInMonth).map { day ->
+            dailyExpenses[day] ?: 0.0
+        }
+    }
+
+    val maxValue = remember(dataPoints) { dataPoints.maxOrNull() ?: 1.0 }
     val density = androidx.compose.ui.platform.LocalDensity.current
     val textPaint = remember(density) {
         android.graphics.Paint().apply {
             color = android.graphics.Color.parseColor("#9E9E9E")
             textAlign = android.graphics.Paint.Align.CENTER
-            textSize = with(density) { 10.dp.toPx() } // Responsive text size
+            textSize = with(density) { 11.sp.toPx() }
             isAntiAlias = true
         }
     }
 
     Box(
-        modifier = modifier.fillMaxWidth().height(180.dp).padding(top = 10.dp)
+        modifier = modifier.fillMaxWidth().height(220.dp)
     ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
-            val xAxisLabelAreaHeight = 30.dp.toPx()
-            val chartAreaHeight = size.height - xAxisLabelAreaHeight
             val width = size.width
+            val height = size.height
+            val bottomPadding = 30.dp.toPx()
+            val chartHeight = height - bottomPadding
 
             // Draw Grid Lines
-            val gridLineCount = 4
-            for (i in 0..gridLineCount) {
-                val y = chartAreaHeight * (i.toFloat() / gridLineCount)
+            val gridLines = 4
+            val stepY = chartHeight / gridLines
+            for (i in 0..gridLines) {
+                val y = stepY * i
                 drawLine(
                     color = Color(0xFFEEEEEE),
                     start = Offset(0f, y),
                     end = Offset(width, y),
-                    strokeWidth = 1.dp.toPx()
+                    strokeWidth = 1.dp.toPx(),
+                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
                 )
             }
 
-            // Draw Bars
-            val barWidth = (width / daysInMonth) * 0.6f
-            val stepX = width / daysInMonth
+            // Calculate Points
+            val stepX = width / (daysInMonth - 1)
+            val points = mutableListOf<Offset>()
 
-            dailyExpenses.forEach { (day, expense) ->
-                if (expense > 0 && day <= daysInMonth) {
-                    val barHeight = (expense.toFloat() / maxValue.toFloat()) * chartAreaHeight
-                    // Ensure bar has min height so it's visible
-                    val actualBarHeight = if (barHeight < 2.dp.toPx()) 2.dp.toPx() else barHeight
+            dataPoints.forEachIndexed { index, value ->
+                val x = index * stepX
+                // Invert Y because canvas origin is top-left
+                val y = chartHeight - (value.toFloat() / maxValue.toFloat() * chartHeight)
+                points.add(Offset(x, y))
+            }
 
-                    val centerX = (day - 1) * stepX + stepX / 2
-                    val left = centerX - barWidth / 2
+            if (points.isNotEmpty()) {
+                // Create smooth path
+                val path = Path().apply {
+                    moveTo(points.first().x, points.first().y)
+                    for (i in 0 until points.size - 1) {
+                        val p1 = points[i]
+                        val p2 = points[i + 1]
+                        // Bezier curve control points
+                        val cp1 = Offset((p1.x + p2.x) / 2, p1.y)
+                        val cp2 = Offset((p1.x + p2.x) / 2, p2.y)
+                        cubicTo(cp1.x, cp1.y, cp2.x, cp2.y, p2.x, p2.y)
+                    }
+                }
 
-                    drawRoundRect(
-                        color = barColor.copy(alpha = 0.85f),
-                        topLeft = Offset(left, chartAreaHeight - actualBarHeight),
-                        size = Size(barWidth, actualBarHeight),
-                        cornerRadius = CornerRadius(4f, 4f)
+                // Draw gradient area below line
+                val fillPath = Path().apply {
+                    addPath(path)
+                    lineTo(points.last().x, chartHeight)
+                    lineTo(points.first().x, chartHeight)
+                    close()
+                }
+
+                drawPath(
+                    path = fillPath,
+                    brush = Brush.verticalGradient(
+                        colors = gradientColors,
+                        startY = 0f,
+                        endY = chartHeight
                     )
+                )
 
-                    if (day == 1 || day % 5 == 0) {
+                // Draw the line
+                drawPath(
+                    path = path,
+                    color = lineColor,
+                    style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round)
+                )
+
+                // Draw selection dots or key points (e.g., peaks or every 5th day)
+                points.forEachIndexed { index, point ->
+                    val day = index + 1
+                    if (dataPoints[index] > 0 && (day == 1 || day % 5 == 0 || dataPoints[index] == maxValue)) {
+                        drawCircle(
+                            color = Color.White,
+                            center = point,
+                            radius = 4.dp.toPx()
+                        )
+                        drawCircle(
+                            color = lineColor,
+                            center = point,
+                            radius = 4.dp.toPx(),
+                            style = Stroke(width = 2.dp.toPx())
+                        )
+                    }
+
+                    // X Axis Labels
+                    if (day == 1 || day % 5 == 0 || day == daysInMonth) {
                         drawContext.canvas.nativeCanvas.drawText(
                             day.toString(),
-                            centerX,
-                            chartAreaHeight + xAxisLabelAreaHeight - 5.dp.toPx(),
+                            point.x,
+                            height - 10.dp.toPx(),
                             textPaint
                         )
                     }

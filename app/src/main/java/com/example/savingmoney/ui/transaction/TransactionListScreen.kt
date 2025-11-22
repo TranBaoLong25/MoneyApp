@@ -61,13 +61,9 @@ fun TransactionListScreen(
             topBar = {
                 TopAppBar(
                     title = { Text("Lịch Sử Giao Dịch", fontWeight = FontWeight.Bold) },
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
-                    actions = {
-                        IconButton(onClick = { /* TODO: Implement search functionality */ }) {
-                            Icon(Icons.Default.Search, contentDescription = "Tìm kiếm giao dịch")
-                        }
-                    }
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
                 )
+
             },
             bottomBar = {
                 BottomNavigationBar(

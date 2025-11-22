@@ -229,18 +229,7 @@ fun BalanceCard(balance: Double, income: Double, expense: Double) {
                         style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold),
                         color = Color.White
                     )
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Surface(
-                        color = Color.White.copy(alpha = 0.2f),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Text(
-                            text = "VND",
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                            color = Color.White
-                        )
-                    }
+                    // Đã bỏ Surface hiển thị "VND"
                 }
             }
 
@@ -259,9 +248,9 @@ fun BalanceCard(balance: Double, income: Double, expense: Double) {
                     iconTint = Color(0xFF2E7D32),
                     bgTint = Color(0xFFE8F5E9)
                 )
-                
+
                 Divider(color = Color.LightGray.copy(alpha = 0.3f))
-                
+
                 StatRow(
                     label = "Chi tiêu",
                     amount = expense,
@@ -273,6 +262,7 @@ fun BalanceCard(balance: Double, income: Double, expense: Double) {
         }
     }
 }
+
 
 @Composable
 fun StatRow(

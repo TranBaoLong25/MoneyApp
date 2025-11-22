@@ -52,7 +52,7 @@ fun PlanningListScreen(
     val expenseCategories by viewModel.expenseCategories.collectAsState()
 
     val columnState = rememberLazyListState()
-    
+
     // Animation state for pie chart
     var animationPlayed by remember { mutableStateOf(false) }
     val animateRotation = remember { Animatable(0f) }
@@ -88,17 +88,8 @@ fun PlanningListScreen(
                     style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                     color = Color(0xFF003B5C)
                 )
-                
-                FloatingActionButton(
-                    onClick = onAddPlan,
-                    containerColor = Color(0xFF0ED2F7),
-                    contentColor = Color.White,
-                    modifier = Modifier.size(40.dp),
-                    shape = CircleShape,
-                    elevation = FloatingActionButtonDefaults.elevation(4.dp)
-                ) {
-                    Icon(Icons.Default.Add, contentDescription = "Thêm kế hoạch")
-                }
+
+
             }
 
             LazyColumn(
@@ -166,7 +157,7 @@ fun OverviewCard(income: Double, expense: Double) {
                 color = Color(0xFF003B5C)
             )
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -257,7 +248,7 @@ fun SpendAnalysisCard(
                                 color = Color.Gray
                             )
                             Text(
-                                FormatUtils.formatCompactCurrency(totalExpense),
+                                FormatUtils.formatCurrency(totalExpense),
                                 style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
                                 color = Color(0xFF003B5C)
                             )
@@ -273,11 +264,20 @@ fun SpendAnalysisCard(
                     ) {
                         expenseByCategory.take(4).forEach { (category, amount) ->
                             Row(verticalAlignment = Alignment.CenterVertically) {
+                                // Thay Box tròn bằng icon của category
                                 Box(
                                     modifier = Modifier
-                                        .size(12.dp)
-                                        .background(category.getColor(), CircleShape)
-                                )
+                                        .size(20.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = category.getIcon(),
+                                        contentDescription = category.name,
+                                        tint = category.getColor(),
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
                                     category.name,
@@ -294,30 +294,35 @@ fun SpendAnalysisCard(
                             }
                         }
                     }
+
                 }
             }
 
             // Smart Tip
             Spacer(modifier = Modifier.height(20.dp))
             if (!transactionsEmpty && !smartTip.isNullOrBlank()) {
+                // Chỉ 2 trường hợp
+                val tipColor = if (smartTip == "Tiêu xài quá đà!") Color.Red else Color(0xFF00C853)
+                val backgroundColor = tipColor.copy(alpha = 0.15f)
+
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(Color(0xFFE3F2FD), RoundedCornerShape(12.dp))
+                        .background(backgroundColor, RoundedCornerShape(12.dp))
                         .padding(12.dp)
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             Icons.Default.Warning,
                             contentDescription = null,
-                            tint = Color(0xFF0277BD),
+                            tint = tipColor,
                             modifier = Modifier.size(20.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             smartTip,
                             style = MaterialTheme.typography.bodySmall,
-                            color = Color(0xFF01579B)
+                            color = tipColor
                         )
                     }
                 }
@@ -325,6 +330,7 @@ fun SpendAnalysisCard(
         }
     }
 }
+
 
 @Composable
 fun BudgetSection(
@@ -348,7 +354,7 @@ fun BudgetSection(
                 Text("Thêm mới", color = Color(0xFF0ED2F7))
             }
         }
-        
+
         Spacer(modifier = Modifier.height(8.dp))
 
         if (plans.isEmpty()) {
@@ -379,7 +385,7 @@ fun BudgetSection(
                 items(plans) { plan ->
                     val category = expenseCategories.firstOrNull { it.name == plan.title }
                         ?: Category(name = plan.title, type = TransactionType.EXPENSE, iconName = "Label", color = "#808080")
-                    
+
                     BudgetCard(
                         plan = plan,
                         category = category,
@@ -452,11 +458,11 @@ fun BudgetCard(
                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
                 color = if (isOverBudget) Color.Red else Color.Black
             )
-            
+
             Spacer(modifier = Modifier.height(4.dp))
-            
+
             Text(
-                "/ ${FormatUtils.formatCompactCurrency(plan.budgetAmount)}",
+                "/ ${FormatUtils.formatCurrency(plan.budgetAmount)}",
                 style = MaterialTheme.typography.labelSmall,
                 color = Color.Gray
             )
@@ -473,12 +479,12 @@ fun BudgetCard(
                 color = progressColor,
                 trackColor = Color(0xFFF0F0F0),
             )
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             // Status
             Text(
-                if (isOverBudget) "Vượt quá!" else "Còn ${FormatUtils.formatCompactCurrency(remaining)}",
+                if (isOverBudget) "Vượt quá!" else "Còn ${FormatUtils.formatCurrency(remaining)}",
                 style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
                 color = if (isOverBudget) Color.Red else Color(0xFF00C853)
             )

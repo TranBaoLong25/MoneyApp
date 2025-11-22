@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -24,6 +25,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -103,6 +105,7 @@ fun LoginScreen(
                         )
                         .padding(24.dp)
                 ) {
+                    // Email input
                     OutlinedTextField(
                         value = email,
                         onValueChange = { email = it },
@@ -113,6 +116,8 @@ fun LoginScreen(
                         colors = authTextFieldColors()
                     )
                     Spacer(modifier = Modifier.height(16.dp))
+
+                    // Password input
                     OutlinedTextField(
                         value = password,
                         onValueChange = { password = it },
@@ -133,6 +138,8 @@ fun LoginScreen(
                         colors = authTextFieldColors()
                     )
                     Spacer(modifier = Modifier.height(24.dp))
+
+                    // Quên mật khẩu
                     TextButton(
                         onClick = {
                             if (email.isBlank()) {
@@ -143,7 +150,7 @@ fun LoginScreen(
                                 }
                             }
                         },
-                        modifier = Modifier.align(Alignment.End) // canh phải
+                        modifier = Modifier.align(Alignment.End)
                     ) {
                         Text(
                             text = "Quên mật khẩu?",
@@ -151,16 +158,33 @@ fun LoginScreen(
                             fontWeight = FontWeight.Medium
                         )
                     }
-                    Spacer(modifier = Modifier.height(16.dp)) // giữ khoảng cách trước nút đăng nhập
+                    Spacer(modifier = Modifier.height(16.dp))
 
-
-                    Spacer(modifier = Modifier.height(16.dp)) // giữ khoảng cách trước nút đăng nhập
-
+                    // Nút đăng nhập với kiểm tra trống email/password
                     if (uiState.isLoading) {
                         CircularProgressIndicator(color = Color.White)
                     } else {
                         Button(
-                            onClick = { authViewModel.signInWithEmail(email, password) },
+                            onClick = {
+                                localError = null
+                                when {
+                                    email.isBlank() && password.isBlank() -> {
+                                        localError = "Email và Mật khẩu không được để trống"
+                                        return@Button
+                                    }
+                                    email.isBlank() -> {
+                                        localError = "Email không được để trống"
+                                        return@Button
+                                    }
+                                    password.isBlank() -> {
+                                        localError = "Mật khẩu không được để trống"
+                                        return@Button
+                                    }
+                                    else -> {
+                                        authViewModel.signInWithEmail(email, password)
+                                    }
+                                }
+                            },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .shadow(8.dp, RoundedCornerShape(16.dp)),
@@ -172,11 +196,19 @@ fun LoginScreen(
                         }
                     }
 
+                    // Hiển thị lỗi
+                    localError?.let {
+                        Text(
+                            text = it,
+                            color = Color(0xFFFFC107), // vàng
+                            modifier = Modifier.padding(top = 8.dp)
+                        )
+                    }
                     uiState.error?.let {
                         Text(
                             text = it,
                             color = MaterialTheme.colorScheme.errorContainer,
-                            modifier = Modifier.padding(top = 16.dp)
+                            modifier = Modifier.padding(top = 8.dp)
                         )
                     }
                 }
@@ -198,15 +230,26 @@ fun LoginScreen(
                             .fillMaxWidth()
                             .shadow(4.dp, RoundedCornerShape(16.dp))
                     ) {
-                        Text("Đăng nhập bằng Google", color = Color.Black, fontWeight = FontWeight.Bold)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Image(
+                                painter = painterResource(id = R.drawable.gg),
+                                contentDescription = "Google",
+                                modifier = Modifier.size(24.dp)
+                            )
+
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                "Đăng nhập bằng Google",
+                                color = Color.Black,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
-                    localError?.let {
-                        Text(
-                            text = it,
-                            color = Color(0xFFFFC107),
-                            modifier = Modifier.padding(top = 8.dp)
-                        )
-                    }
+
                 }
             }
 

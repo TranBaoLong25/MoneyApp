@@ -1,18 +1,13 @@
 package com.example.savingmoney.ui.auth
 
+import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border // ✅ THÊM IMPORT
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -29,11 +24,16 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import com.example.savingmoney.R
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 
 @Composable
 fun RegisterScreen(
@@ -45,11 +45,32 @@ fun RegisterScreen(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+    var localError by remember { mutableStateOf<String?>(null) }
 
-    LaunchedEffect(uiState.isRegistered) {
-        if (uiState.isRegistered) {
-            onNavigateToLogin()
+    val context = LocalContext.current
+
+    // Google Sign-In setup
+    val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+        .requestIdToken(context.getString(R.string.default_web_client_id))
+        .requestEmail()
+        .build()
+    val googleSignInClient = GoogleSignIn.getClient(context, gso)
+
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+        try {
+            val account = task.getResult(Exception::class.java)
+            account?.idToken?.let { idToken ->
+                authViewModel.signInWithGoogle(idToken)
+            }
+        } catch (e: Exception) {
+            Log.e("RegisterScreen", "Google Sign-In Failed", e)
+            localError = "Đăng nhập Google thất bại!"
         }
+    }
+
+    LaunchedEffect(uiState.isAuthenticated) {
+        if (uiState.isAuthenticated) onNavigateToHome()
     }
 
     Box(
@@ -76,12 +97,10 @@ fun RegisterScreen(
                         .padding(horizontal = 24.dp)
                         .clip(RoundedCornerShape(24.dp))
                         .background(Color.White.copy(alpha = 0.1f))
-                        .border(
-                            BorderStroke(1.dp, Color.White.copy(alpha = 0.2f)),
-                            RoundedCornerShape(24.dp)
-                        )
+                        .border(BorderStroke(1.dp, Color.White.copy(alpha = 0.2f)), RoundedCornerShape(24.dp))
                         .padding(24.dp)
                 ) {
+                    // Email
                     OutlinedTextField(
                         value = email,
                         onValueChange = { email = it },
@@ -92,6 +111,8 @@ fun RegisterScreen(
                         colors = authTextFieldColors()
                     )
                     Spacer(modifier = Modifier.height(16.dp))
+
+                    // Password
                     OutlinedTextField(
                         value = password,
                         onValueChange = { password = it },
@@ -113,11 +134,34 @@ fun RegisterScreen(
                     )
                     Spacer(modifier = Modifier.height(24.dp))
 
+                    // Nút đăng ký Email với kiểm tra trống
                     if (uiState.isLoading) {
                         CircularProgressIndicator(color = Color.White)
                     } else {
                         Button(
-                            onClick = { authViewModel.signUpWithEmail(email, password) },
+                            onClick = {
+                                localError = null
+                                when {
+                                    email.isBlank() && password.isBlank() -> {
+                                        localError = "Email và Mật khẩu không được để trống"
+                                        return@Button
+                                    }
+
+                                    email.isBlank() -> {
+                                        localError = "Email không được để trống"
+                                        return@Button
+                                    }
+
+                                    password.isBlank() -> {
+                                        localError = "Mật khẩu không được để trống"
+                                        return@Button
+                                    }
+
+                                    else -> {
+                                        authViewModel.signUpWithEmail(email, password)
+                                    }
+                                }
+                            },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .shadow(8.dp, RoundedCornerShape(16.dp)),
@@ -125,23 +169,61 @@ fun RegisterScreen(
                             contentPadding = PaddingValues(vertical = 16.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = Color.White)
                         ) {
-                            Text("TẠO TÀI KHOẢN", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                            Text(
+                                "TẠO TÀI KHOẢN",
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // Nút Google Sign-In
+                        Button(
+                            onClick = { launcher.launch(googleSignInClient.signInIntent) },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.White),
+                            shape = RoundedCornerShape(16.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .shadow(4.dp, RoundedCornerShape(16.dp))
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Image(
+                                    painter = painterResource(id = R.drawable.gg),
+                                    contentDescription = "Google",
+                                    modifier = Modifier.size(24.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    "Đăng nhập bằng Google",
+                                    color = Color.Black,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
                         }
                     }
 
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                    // Thông báo lỗi / thành công
+                    localError?.let {
+                        Text(it, color = Color(0xFFFFC107))
+                    }
                     uiState.error?.let {
-                        Text(
-                            text = it,
-                            color = MaterialTheme.colorScheme.errorContainer,
-                            modifier = Modifier.padding(top = 16.dp)
-                        )
+                        Text(it, color = MaterialTheme.colorScheme.error)
+                    }
+                    if (uiState.isRegistered) {
+                        Text("Đăng ký thành công! Vui lòng đăng nhập.", color = Color(0xFF2E7D32))
                     }
                 }
             }
 
             item {
-                // ✅ SỬA LẠI SPACER, KHÔNG DÙNG WEIGHT
-                Spacer(modifier = Modifier.height(64.dp)) 
+                Spacer(modifier = Modifier.height(64.dp))
                 Row(
                     modifier = Modifier.padding(bottom = 32.dp),
                     verticalAlignment = Alignment.CenterVertically

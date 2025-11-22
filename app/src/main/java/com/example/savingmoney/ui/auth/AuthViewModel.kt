@@ -55,10 +55,14 @@ class AuthViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(isLoading = true, error = null)
         auth.createUserWithEmailAndPassword(email, password)
             .addOnCompleteListener { task ->
-                _uiState.value = if (task.isSuccessful) {
-                    _uiState.value.copy(isLoading = false, isRegistered = true, error = null)
+                if (task.isSuccessful) {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        isRegistered = true,
+                        error = null
+                    )
                 } else {
-                    _uiState.value.copy(
+                    _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         isRegistered = false,
                         error = task.exception?.localizedMessage ?: "Đăng ký thất bại"
@@ -72,10 +76,14 @@ class AuthViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(isLoading = true, error = null)
         auth.signInWithEmailAndPassword(email, password)
             .addOnCompleteListener { task ->
-                _uiState.value = if (task.isSuccessful) {
-                    _uiState.value.copy(isLoading = false, isAuthenticated = true, error = null)
+                if (task.isSuccessful) {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        isAuthenticated = true,
+                        error = null
+                    )
                 } else {
-                    _uiState.value.copy(
+                    _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         isAuthenticated = false,
                         error = task.exception?.localizedMessage ?: "Đăng nhập thất bại"
@@ -90,10 +98,14 @@ class AuthViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(isLoading = true, error = null)
         auth.signInWithCredential(credential)
             .addOnCompleteListener { task ->
-                _uiState.value = if (task.isSuccessful) {
-                    _uiState.value.copy(isLoading = false, isAuthenticated = true, error = null)
+                if (task.isSuccessful) {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        isAuthenticated = true,
+                        error = null
+                    )
                 } else {
-                    _uiState.value.copy(
+                    _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         isAuthenticated = false,
                         error = task.exception?.localizedMessage ?: "Đăng nhập Google thất bại"
@@ -102,11 +114,9 @@ class AuthViewModel @Inject constructor(
             }
     }
 
-    /**
-     * Xử lý đăng xuất.
-     */
+    // --- Đăng xuất ---
     fun signOut() {
         auth.signOut()
-        _uiState.value = AuthUiState(isAuthenticated = false)
+        _uiState.value = AuthUiState()
     }
 }

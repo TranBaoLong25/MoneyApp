@@ -10,4 +10,14 @@ object FormatUtils {
     fun formatCurrency(amount: Double): String {
         return currencyFormatter.format(amount)
     }
+    
+    fun formatCompactCurrency(amount: Double): String {
+        return if (amount >= 1_000_000) {
+            String.format(Locale("vi", "VN"), "%.1f tr", amount / 1_000_000)
+        } else if (amount >= 1_000) {
+            String.format(Locale("vi", "VN"), "%.0f k", amount / 1_000)
+        } else {
+            formatCurrency(amount)
+        }
+    }
 }

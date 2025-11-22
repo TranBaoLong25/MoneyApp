@@ -4,6 +4,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -25,14 +26,14 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.savingmoney.ui.theme.PrimaryLight
+import com.example.savingmoney.domain.model.TransactionSummary
 import com.example.savingmoney.utils.FormatUtils
 import java.util.Calendar
 import java.util.GregorianCalendar
-import kotlin.math.abs
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -41,6 +42,8 @@ fun StatsScreen(
     viewModel: StatsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val mainTextColor = Color(0xFF003B5C)
+    val iconColor = Color(0xFF005B96)
 
     Box(
         modifier = Modifier
@@ -54,12 +57,19 @@ fun StatsScreen(
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { Text("Báo Cáo Chi Tiêu Tháng") },
+                    title = {
+                        Text(
+                            "Báo Cáo Chi Tiêu",
+                            fontWeight = FontWeight.Bold,
+                            color = mainTextColor
+                        )
+                    },
                     navigationIcon = {
                         IconButton(onClick = onNavigateUp) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Quay lại"
+                                contentDescription = "Quay lại",
+                                tint = mainTextColor
                             )
                         }
                     },
@@ -79,27 +89,35 @@ fun StatsScreen(
             ) {
                 when {
                     uiState.isLoading -> {
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            CircularProgressIndicator()
+                        Box(modifier = Modifier.fillMaxSize().padding(top = 50.dp), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator(color = iconColor)
                         }
                     }
                     uiState.error != null -> {
-                        Text("Lỗi: ${uiState.error}", color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(16.dp))
+                        Box(modifier = Modifier.fillMaxWidth().padding(top = 20.dp), contentAlignment = Alignment.Center) {
+                            Text("Lỗi: ${uiState.error}", color = MaterialTheme.colorScheme.error)
+                        }
                     }
                     uiState.summary != null -> {
                         val summary = uiState.summary!!
                         val categoryColors = remember { generateCategoryColors(summary.expenseByCategory.keys.toList()) }
-                        
+
                         Spacer(modifier = Modifier.height(16.dp))
-                        SummaryCard(summary)
+                        SummaryCard(summary, mainTextColor, iconColor)
                         Spacer(modifier = Modifier.height(24.dp))
-                        CategoryAnalysisCard(summary, categoryColors)
+                        CategoryAnalysisCard(summary, categoryColors, mainTextColor, iconColor)
                         Spacer(modifier = Modifier.height(24.dp))
-                        DailyHistoryCard(summary)
-                        Spacer(modifier = Modifier.height(16.dp))
+                        DailyHistoryCard(summary, mainTextColor, iconColor)
+                        Spacer(modifier = Modifier.height(40.dp))
                     }
                     else -> {
-                        Text("Không có dữ liệu báo cáo cho tháng này.", modifier = Modifier.padding(16.dp))
+                        Box(modifier = Modifier.fillMaxSize().padding(top = 100.dp), contentAlignment = Alignment.Center) {
+                            Text(
+                                "Chưa có dữ liệu cho tháng này.",
+                                color = Color.Gray,
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                        }
                     }
                 }
             }
@@ -108,45 +126,70 @@ fun StatsScreen(
 }
 
 @Composable
-fun SummaryCard(summary: com.example.savingmoney.domain.model.TransactionSummary) {
-    val netColor = if (summary.netBalance >= 0) Color(0xFF2E7D32) else MaterialTheme.colorScheme.error
+fun SummaryCard(
+    summary: TransactionSummary,
+    textColor: Color,
+    iconColor: Color
+) {
+    val netColor = if (summary.netBalance >= 0) Color(0xFF2E7D32) else Color(0xFFFF5252)
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(24.dp),
         elevation = CardDefaults.cardElevation(4.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface) // Đổi màu nền
+        colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
-        Column(modifier = Modifier.padding(20.dp)) {
+        Column(modifier = Modifier.padding(24.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.AccountBalanceWallet, contentDescription = "Tổng quan", tint = MaterialTheme.colorScheme.primary)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Tổng Quan Tháng", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(iconColor.copy(alpha = 0.1f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.Default.AccountBalanceWallet, contentDescription = "Tổng quan", tint = iconColor)
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+                Text("Tổng Quan Tháng", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = textColor)
             }
-            Spacer(Modifier.height(16.dp))
-            SummaryRow("Tổng Thu nhập", summary.totalIncome, Color(0xFF2E7D32))
-            Spacer(Modifier.height(8.dp))
-            SummaryRow("Tổng Chi tiêu", summary.totalExpense, MaterialTheme.colorScheme.error)
-            Divider(Modifier.padding(vertical = 16.dp))
-            SummaryRow("Lãi/Lỗ", summary.netBalance, netColor, MaterialTheme.typography.titleMedium)
+            Spacer(Modifier.height(20.dp))
+            SummaryRow("Tổng Thu nhập", summary.totalIncome, Color(0xFF00C853), textColor)
+            Spacer(Modifier.height(12.dp))
+            SummaryRow("Tổng Chi tiêu", summary.totalExpense, Color(0xFFFF5252), textColor)
+            HorizontalDivider(Modifier.padding(vertical = 16.dp), color = Color(0xFFE0E0E0))
+            SummaryRow("Số dư", summary.netBalance, netColor, textColor, isTotal = true)
         }
     }
 }
 
 @Composable
-fun CategoryAnalysisCard(summary: com.example.savingmoney.domain.model.TransactionSummary, categoryColors: Map<String, Color>) {
+fun CategoryAnalysisCard(
+    summary: TransactionSummary,
+    categoryColors: Map<String, Color>,
+    textColor: Color,
+    iconColor: Color
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(24.dp),
         elevation = CardDefaults.cardElevation(4.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface) // Đổi màu nền
+        colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
-        Column(modifier = Modifier.padding(20.dp)) {
+        Column(modifier = Modifier.padding(24.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.BarChart, contentDescription = "Phân tích", tint = MaterialTheme.colorScheme.primary)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Phân Tích Chi Tiêu", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(iconColor.copy(alpha = 0.1f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.Default.BarChart, contentDescription = "Phân tích", tint = iconColor)
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+                Text("Phân Tích Chi Tiêu", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = textColor)
             }
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(20.dp))
             if (summary.expenseByCategory.isNotEmpty()) {
                 Row(
                     modifier = Modifier.fillMaxWidth().height(200.dp),
@@ -155,52 +198,76 @@ fun CategoryAnalysisCard(summary: com.example.savingmoney.domain.model.Transacti
                     CategoryBarChart(
                         expenseByCategory = summary.expenseByCategory,
                         categoryColors = categoryColors,
-                        modifier = Modifier.weight(0.5f)
+                        modifier = Modifier.weight(0.4f)
                     )
                     Spacer(modifier = Modifier.width(20.dp))
                     CategoryLegend(
                         expenseByCategory = summary.expenseByCategory,
                         totalExpense = summary.totalExpense,
                         categoryColors = categoryColors,
-                        modifier = Modifier.weight(0.5f)
+                        textColor = textColor,
+                        modifier = Modifier.weight(0.6f)
                     )
                 }
             } else {
-                Text("Không có dữ liệu chi tiêu để phân tích.", modifier = Modifier.padding(vertical = 24.dp).align(Alignment.CenterHorizontally))
+                Text(
+                    "Chưa có giao dịch chi tiêu nào.",
+                    modifier = Modifier.padding(vertical = 24.dp).align(Alignment.CenterHorizontally),
+                    color = Color.Gray
+                )
             }
         }
     }
 }
 
 @Composable
-fun DailyHistoryCard(summary: com.example.savingmoney.domain.model.TransactionSummary) {
+fun DailyHistoryCard(
+    summary: TransactionSummary,
+    textColor: Color,
+    iconColor: Color
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(24.dp),
         elevation = CardDefaults.cardElevation(4.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface) // Đổi màu nền
+        colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
-        Column(modifier = Modifier.padding(20.dp)) {
+        Column(modifier = Modifier.padding(24.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.DateRange, contentDescription = "Lịch sử", tint = MaterialTheme.colorScheme.primary)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Lịch Sử Chi Tiêu Hàng Ngày", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(iconColor.copy(alpha = 0.1f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.Default.DateRange, contentDescription = "Lịch sử", tint = iconColor)
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+                Text("Biểu Đồ Ngày", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = textColor)
             }
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(16.dp))
             if (summary.dailyExpenses.isNotEmpty()) {
-                DailyColumnChart(dailyExpenses = summary.dailyExpenses)
+                DailyColumnChart(dailyExpenses = summary.dailyExpenses, barColor = iconColor)
             } else {
-                Text("Không có dữ liệu chi tiêu hàng ngày.", modifier = Modifier.padding(vertical = 24.dp).align(Alignment.CenterHorizontally))
+                Text(
+                    "Chưa có dữ liệu chi tiêu theo ngày.",
+                    modifier = Modifier.padding(vertical = 24.dp).align(Alignment.CenterHorizontally),
+                    color = Color.Gray
+                )
             }
         }
     }
 }
 
 fun generateCategoryColors(categories: List<String>): Map<String, Color> {
-    return categories.associateWith { category ->
-        val hue = (abs(category.hashCode()) % 360).toFloat()
-        Color.hsl(hue, 0.6f, 0.7f)
-    }
+    val colors = listOf(
+        Color(0xFFFF5252), Color(0xFF448AFF), Color(0xFF00E676), Color(0xFFFFAB40),
+        Color(0xFFE040FB), Color(0xFF18FFFF), Color(0xFFFFD740), Color(0xFF7C4DFF)
+    )
+    return categories.mapIndexed { index, category ->
+        category to colors[index % colors.size]
+    }.toMap()
 }
 
 @Composable
@@ -211,25 +278,37 @@ fun CategoryBarChart(
 ) {
     val maxValue = remember { expenseByCategory.values.maxOrNull() ?: 1.0 }
 
-    Canvas(modifier = modifier.fillMaxSize()) { 
+    Canvas(modifier = modifier.fillMaxSize()) {
         val barCount = expenseByCategory.size
         if (barCount == 0) return@Canvas
 
-        val barWidth = size.width / (barCount * 2)
-        val spaceBetweenBars = barWidth
-        var currentX = spaceBetweenBars / 2
+        // Use available height for bars
+        val availableHeight = size.height
+        val availableWidth = size.width
 
-        expenseByCategory.entries.sortedByDescending { it.value }.forEach { (category, expense) ->
-            val barHeight = (expense.toFloat() / maxValue.toFloat()) * size.height
+        val barWidth = availableWidth / (barCount + (barCount -1) * 0.5f) // Approximation for spacing
+        val spaceBetweenBars = barWidth * 0.5f
+
+        var currentX = 0f
+
+        // Sắp xếp để vẽ từ cao đến thấp hoặc ngược lại, tùy ý. Ở đây vẽ theo thứ tự danh sách đã sort
+        val sortedEntries = expenseByCategory.entries.sortedByDescending { it.value }
+
+        // Recalculate width to fit perfectly if needed or keep simple
+        val totalGap = (sortedEntries.size - 1) * spaceBetweenBars
+        val calculatedBarWidth = (availableWidth - totalGap) / sortedEntries.size
+
+        sortedEntries.forEach { (category, expense) ->
+            val barHeight = (expense.toFloat() / maxValue.toFloat()) * availableHeight
             val color = categoryColors[category] ?: Color.Gray
 
             drawRoundRect(
                 color = color,
-                topLeft = Offset(currentX, size.height - barHeight),
-                size = Size(barWidth, barHeight),
-                cornerRadius = CornerRadius(8f, 8f)
+                topLeft = Offset(currentX, availableHeight - barHeight),
+                size = Size(calculatedBarWidth, barHeight),
+                cornerRadius = CornerRadius(6f, 6f)
             )
-            currentX += (barWidth + spaceBetweenBars)
+            currentX += (calculatedBarWidth + spaceBetweenBars)
         }
     }
 }
@@ -239,24 +318,35 @@ fun CategoryLegend(
     expenseByCategory: Map<String, Double>,
     totalExpense: Double,
     categoryColors: Map<String, Color>,
+    textColor: Color,
     modifier: Modifier = Modifier
 ) {
-    Column(modifier = modifier.fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically)) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
         expenseByCategory.entries.sortedByDescending { it.value }.take(5).forEach { (category, expense) ->
             val percentage = if (totalExpense > 0) (expense / totalExpense).toFloat() else 0f
             val color = categoryColors[category] ?: Color.Gray
-            
+
             Column {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text(category, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
-                    Text("${String.format("%.0f", percentage * 100)}%", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
+                    Text(
+                        category,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium,
+                        color = textColor
+                    )
+                    Text(
+                        "${String.format("%.0f", percentage * 100)}%",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.Gray,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(6.dp))
                 LinearProgressIndicator(
                     progress = { percentage },
-                    modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)),
+                    modifier = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)),
                     color = color,
-                    trackColor = color.copy(alpha = 0.2f)
+                    trackColor = Color(0xFFF0F0F0),
                 )
             }
         }
@@ -266,6 +356,7 @@ fun CategoryLegend(
 @Composable
 fun DailyColumnChart(
     dailyExpenses: Map<Int, Double>,
+    barColor: Color,
     modifier: Modifier = Modifier
 ) {
     val maxValue = remember { dailyExpenses.values.maxOrNull() ?: 1.0 }
@@ -275,51 +366,63 @@ fun DailyColumnChart(
 
     val textPaint = remember {
         android.graphics.Paint().apply {
-            color = android.graphics.Color.parseColor("#616161")
+            color = android.graphics.Color.parseColor("#9E9E9E")
             textAlign = android.graphics.Paint.Align.CENTER
-            textSize = 32f
+            textSize = 30f
+            isAntiAlias = true
         }
     }
 
     Box(
-        modifier = modifier.fillMaxWidth().height(160.dp).padding(top = 16.dp)
+        modifier = modifier.fillMaxWidth().height(180.dp).padding(top = 10.dp)
     ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
             val xAxisLabelAreaHeight = 30.dp.toPx()
             val chartAreaHeight = size.height - xAxisLabelAreaHeight
+            val width = size.width
 
-            val gridLineCount = 3
+            // Draw Grid Lines
+            val gridLineCount = 4
             for (i in 0..gridLineCount) {
                 val y = chartAreaHeight * (i.toFloat() / gridLineCount)
                 drawLine(
-                    color = Color.LightGray.copy(alpha = 0.4f),
+                    color = Color(0xFFEEEEEE),
                     start = Offset(0f, y),
-                    end = Offset(size.width, y),
+                    end = Offset(width, y),
                     strokeWidth = 1.dp.toPx()
                 )
             }
 
-            val barWidth = size.width / (daysInMonth * 1.5f)
-            val spaceBetweenBars = barWidth / 2
+            // Draw Bars
+            val barWidth = (width / daysInMonth) * 0.6f
+            val stepX = width / daysInMonth
 
             dailyExpenses.forEach { (day, expense) ->
-                if (expense > 0) {
+                if (expense > 0 && day <= daysInMonth) {
                     val barHeight = (expense.toFloat() / maxValue.toFloat()) * chartAreaHeight
-                    val left = (day - 1) * (barWidth + spaceBetweenBars) + spaceBetweenBars / 2
+                    // Ensure bar has min height so it's visible
+                    val actualBarHeight = if (barHeight < 2.dp.toPx()) 2.dp.toPx() else barHeight
+
+                    val centerX = (day - 1) * stepX + stepX / 2
+                    val left = centerX - barWidth / 2
 
                     drawRoundRect(
-                        color = PrimaryLight.copy(alpha = 0.8f),
-                        topLeft = Offset(left, chartAreaHeight - barHeight),
-                        size = Size(barWidth, barHeight),
-                        cornerRadius = CornerRadius(10f, 10f)
+                        color = barColor.copy(alpha = 0.85f),
+                        topLeft = Offset(left, chartAreaHeight - actualBarHeight),
+                        size = Size(barWidth, actualBarHeight),
+                        cornerRadius = CornerRadius(4f, 4f)
                     )
 
-                    drawContext.canvas.nativeCanvas.drawText(
-                        day.toString(),
-                        left + barWidth / 2,
-                        chartAreaHeight + xAxisLabelAreaHeight - 5.dp.toPx(),
-                        textPaint
-                    )
+                    // Draw day label every 5 days or for peaks?
+                    // Drawing all might be too crowded. Let's draw every 5th day + 1st day
+                    if (day == 1 || day % 5 == 0) {
+                        drawContext.canvas.nativeCanvas.drawText(
+                            day.toString(),
+                            centerX,
+                            chartAreaHeight + xAxisLabelAreaHeight - 5.dp.toPx(),
+                            textPaint
+                        )
+                    }
                 }
             }
         }
@@ -330,20 +433,26 @@ fun DailyColumnChart(
 fun SummaryRow(
     label: String,
     amount: Double,
-    color: Color,
-    textStyle: androidx.compose.ui.text.TextStyle = MaterialTheme.typography.bodyLarge
+    amountColor: Color,
+    textColor: Color,
+    isTotal: Boolean = false
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(label, style = textStyle, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(
+            label,
+            style = if (isTotal) MaterialTheme.typography.titleMedium else MaterialTheme.typography.bodyLarge,
+            color = if (isTotal) textColor else Color.Gray,
+            fontWeight = if (isTotal) FontWeight.Bold else FontWeight.Normal
+        )
         Text(
             text = FormatUtils.formatCurrency(amount),
-            color = color,
-            style = textStyle,
-            fontWeight = FontWeight.ExtraBold
+            color = amountColor,
+            style = if (isTotal) MaterialTheme.typography.titleLarge else MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold
         )
     }
 }

@@ -80,17 +80,19 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
-    fun changePassword(newPassword: String) {
+    fun changePassword(oldPassword: String, newPassword: String) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null, successMessage = null) }
             try {
                 val user = firebaseAuth.currentUser!!
-                // Nếu user đã login bằng password mới, có thể update trực tiếp
+                val credential = EmailAuthProvider.getCredential(user.email!!, oldPassword)
+
+                user.reauthenticate(credential).await()
                 user.updatePassword(newPassword).await()
 
                 _uiState.update { it.copy(isLoading = false, successMessage = "Đổi mật khẩu thành công!") }
             } catch (e: Exception) {
-                _uiState.update { it.copy(isLoading = false, errorMessage = e.localizedMessage ?: "Đổi mật khẩu thất bại.") }
+                _uiState.update { it.copy(isLoading = false, errorMessage = e.localizedMessage ?: "Đổi mật khẩu thất bại. Vui lòng kiểm tra lại mật khẩu cũ.") }
             }
         }
     }

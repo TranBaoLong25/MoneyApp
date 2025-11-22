@@ -30,6 +30,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -100,73 +101,188 @@ fun AddTransactionScreen(
                     viewModel.setCategory(it)
                     scope.launch {
                         sheetState.hide()
-                    }.invokeOnCompletion { 
-                        if (!sheetState.isVisible) showCategorySheet = false 
+                    }.invokeOnCompletion {
+                        if (!sheetState.isVisible) showCategorySheet = false
                     }
                 }
             )
         }
     }
 
-    Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
-        topBar = {
-            TopAppBar(
-                title = { Text(if(uiState.selectedType == TransactionType.EXPENSE) "Thêm Khoản Chi" else "Thêm Khoản Thu", fontWeight = FontWeight.Bold) },
-                navigationIcon = { IconButton(onClick = onNavigateUp) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Quay lại") } },
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(Color(0xFFF7F9FC), Color(0xFFB2FEFA))
+                )
             )
-        },
-        bottomBar = {
-            Button(
-                onClick = viewModel::saveTransaction,
-                enabled = !uiState.isSaving,
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
-                shape = RoundedCornerShape(16.dp),
-                contentPadding = PaddingValues(vertical = 16.dp)
-            ) {
-                if (uiState.isSaving) {
-                    CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary)
-                } else {
-                    Text("LƯU GIAO DỊCH", fontWeight = FontWeight.Bold)
+    ) {
+        Scaffold(
+            containerColor = Color.Transparent,
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Text(
+                            if (uiState.selectedType == TransactionType.EXPENSE) "Thêm Khoản Chi" else "Thêm Khoản Thu",
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF003B5C)
+                        )
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = onNavigateUp) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, "Quay lại", tint = Color(0xFF003B5C))
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+                )
+            },
+            bottomBar = {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ) {
+                    Button(
+                        onClick = viewModel::saveTransaction,
+                        enabled = !uiState.isSaving,
+                        modifier = Modifier.fillMaxWidth()
+                            .shadow(8.dp, RoundedCornerShape(16.dp)),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF0ED2F7),
+                            contentColor = Color.White
+                        ),
+                        contentPadding = PaddingValues(vertical = 16.dp)
+                    ) {
+                        if (uiState.isSaving) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                color = MaterialTheme.colorScheme.onPrimary
+                            )
+                        } else {
+                            Text("LƯU GIAO DỊCH", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                        }
+                    }
                 }
             }
-        }
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(horizontal = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Spacer(modifier = Modifier.height(16.dp))
-            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                SegmentedButton(selected = uiState.selectedType == TransactionType.EXPENSE, onClick = { viewModel.setType(TransactionType.EXPENSE) }, shape = SegmentedButtonDefaults.itemShape(0, 2)) { Text("Chi Tiêu") }
-                SegmentedButton(selected = uiState.selectedType == TransactionType.INCOME, onClick = { viewModel.setType(TransactionType.INCOME) }, shape = SegmentedButtonDefaults.itemShape(1, 2)) { Text("Thu Nhập") }
+        ) { paddingValues ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(horizontal = 20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Segmented Control
+                SingleChoiceSegmentedButtonRow(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    SegmentedButton(
+                        selected = uiState.selectedType == TransactionType.EXPENSE,
+                        onClick = { viewModel.setType(TransactionType.EXPENSE) },
+                        shape = RoundedCornerShape(topStart = 20.dp, bottomStart = 20.dp),
+                        colors = SegmentedButtonDefaults.colors(
+                            activeContainerColor = Color(0xFFFF5252),
+                            activeContentColor = Color.White,
+                            inactiveContainerColor = Color.White
+                        )
+                    ) { Text("Chi Tiêu") }
+
+                    SegmentedButton(
+                        selected = uiState.selectedType == TransactionType.INCOME,
+                        onClick = { viewModel.setType(TransactionType.INCOME) },
+                        shape = RoundedCornerShape(topEnd = 20.dp, bottomEnd = 20.dp),
+                        colors = SegmentedButtonDefaults.colors(
+                            activeContainerColor = Color(0xFF00FFA3),
+                            activeContentColor = Color(0xFF003B5C), // Màu chữ đậm trên nền sáng
+                            inactiveContainerColor = Color.White
+                        )
+                    ) { Text("Thu Nhập") }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Main Card Input
+                Card(modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(4.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(20.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            "Số tiền",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = Color.Gray
+                        )
+
+                        OutlinedTextField(
+                            value = uiState.amountInput,
+                            onValueChange = viewModel::setAmount,
+                            textStyle = MaterialTheme.typography.displayMedium.copy(
+                                textAlign = TextAlign.Center,
+                                fontWeight = FontWeight.Bold,
+                                color = if (uiState.selectedType == TransactionType.EXPENSE) Color(0xFFFF5252) else Color(0xFF00C853)
+                            ),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Color.Transparent,
+                                unfocusedBorderColor = Color.Transparent
+                            ),
+                            placeholder = {
+                                Text(
+                                    "0",
+                                    modifier = Modifier.fillMaxWidth(),
+                                    textAlign = TextAlign.Center,
+                                    style = MaterialTheme.typography.displayMedium,
+                                    color = Color.LightGray
+                                )
+                            }
+                        )
+
+                        Divider(modifier = Modifier.padding(vertical = 16.dp).fillMaxWidth(0.8f), color = Color.LightGray.copy(alpha = 0.3f))
+
+                        InfoRow(
+                            icon = uiState.selectedCategory?.getIcon(),
+                            iconColor = uiState.selectedCategory?.getColor(),
+                            text = uiState.selectedCategory?.name ?: "Chọn hạng mục",
+                            onClick = { showCategorySheet = true },
+                            highlight = uiState.selectedCategory == null
+                        )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        InfoRow(
+                            icon = Icons.Default.DateRange,iconColor = Color(0xFF005B96),
+                            text = formatDate(uiState.selectedDate),
+                            onClick = { showDatePicker = true }
+                        )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        OutlinedTextField(
+                            value = uiState.noteInput,
+                            onValueChange = viewModel::setNote,
+                            label = { Text("Ghi chú (tùy chọn)") },
+                            leadingIcon = { Icon(Icons.Default.Edit, null, tint = Color.Gray) },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = Color(0xFFF5F5F5),
+                                unfocusedContainerColor = Color(0xFFF5F5F5),
+                                focusedBorderColor = Color.Transparent,
+                                unfocusedBorderColor = Color.Transparent
+                            )
+                        )
+                    }
+                }
             }
-            Spacer(modifier = Modifier.height(32.dp))
-
-            OutlinedTextField(
-                value = uiState.amountInput,
-                onValueChange = viewModel::setAmount, 
-                label = { Text("Số tiền") },
-                textStyle = MaterialTheme.typography.headlineLarge.copy(textAlign = TextAlign.Center),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), // ✅ SỬA LẠI
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(modifier = Modifier.height(24.dp))
-
-            InfoRow(icon = uiState.selectedCategory?.getIcon(), iconColor = uiState.selectedCategory?.getColor(), text = uiState.selectedCategory?.name ?: "Chọn hạng mục", onClick = { showCategorySheet = true })
-            Divider(modifier = Modifier.padding(vertical = 8.dp), color = Color.Gray.copy(alpha = 0.2f))
-            InfoRow(icon = Icons.Default.DateRange, text = formatDate(uiState.selectedDate), onClick = { showDatePicker = true })
-            Divider(modifier = Modifier.padding(vertical = 8.dp), color = Color.Gray.copy(alpha = 0.2f))
-            OutlinedTextField(
-                value = uiState.noteInput,
-                onValueChange = viewModel::setNote,
-                label = {Text("Ghi chú (tùy chọn)")},
-                leadingIcon = {Icon(Icons.Default.Edit, null)},
-                modifier = Modifier.fillMaxWidth()
-            )
         }
     }
 }
@@ -174,7 +290,7 @@ fun AddTransactionScreen(
 @Composable
 fun CategorySelectionSheet(categories: List<Category>, onCategorySelected: (Category) -> Unit) {
     Column(modifier = Modifier.padding(16.dp)) {
-        Text("Chọn Hạng mục", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(bottom = 16.dp))
+        Text("Chọn Hạng mục", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold), modifier = Modifier.padding(bottom = 16.dp))
         LazyVerticalGrid(
             columns = GridCells.Adaptive(minSize = 80.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -183,44 +299,73 @@ fun CategorySelectionSheet(categories: List<Category>, onCategorySelected: (Cate
             items(categories) { category ->
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.clickable { onCategorySelected(category) }
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(12.dp))
+                        .clickable { onCategorySelected(category) }
+                        .padding(8.dp)
                 ) {
                     Box(
                         modifier = Modifier
                             .size(64.dp)
                             .clip(CircleShape)
-                            .background(category.getColor().copy(alpha = 0.2f)),
+                            .background(category.getColor().copy(alpha = 0.1f)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = category.getIcon(), 
-                            contentDescription = category.name, 
+                            imageVector = category.getIcon(),
+                            contentDescription = category.name,
                             modifier = Modifier.size(32.dp),
                             tint = category.getColor()
                         )
                     }
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(category.name, textAlign = TextAlign.Center, style = MaterialTheme.typography.bodyMedium)
-                }
-            }
+                }}
         }
     }
 }
 
 @Composable
-fun InfoRow(icon: ImageVector?, iconColor: Color? = MaterialTheme.colorScheme.onSurfaceVariant, text: String, onClick: () -> Unit) {
+fun InfoRow(
+    icon: ImageVector?,
+    iconColor: Color? = MaterialTheme.colorScheme.onSurfaceVariant,
+    text: String,
+    onClick: () -> Unit,
+    highlight: Boolean = false
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(if (highlight) Color(0xFFFFEBEE) else Color(0xFFF5F5F5))
             .clickable(onClick = onClick)
-            .padding(vertical = 12.dp),
+            .padding(horizontal = 16.dp, vertical = 16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        icon?.let {
-            Icon(imageVector = it, contentDescription = null, tint = iconColor ?: MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(28.dp))
-            Spacer(modifier = Modifier.width(16.dp))
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(CircleShape)
+                .background(Color.White),
+            contentAlignment = Alignment.Center
+        ) {
+            if (icon != null) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = iconColor ?: MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(24.dp)
+                )
+            } else {
+                Box(modifier = Modifier.size(24.dp).background(Color.LightGray, CircleShape))
+            }
         }
-        Text(text, style = MaterialTheme.typography.bodyLarge)
+        Spacer(modifier = Modifier.width(16.dp))
+        Text(
+            text,
+            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+            color = if (highlight) MaterialTheme.colorScheme.error else Color.Black
+        )
     }
 }
 

@@ -3,8 +3,10 @@ package com.example.savingmoney.ui.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.savingmoney.domain.usecase.GetLanguageUseCase
+import com.example.savingmoney.domain.usecase.GetNotificationsEnabledUseCase
 import com.example.savingmoney.domain.usecase.GetThemeUseCase
 import com.example.savingmoney.domain.usecase.UpdateLanguageUseCase
+import com.example.savingmoney.domain.usecase.UpdateNotificationsEnabledUseCase
 import com.example.savingmoney.domain.usecase.UpdateThemeUseCase
 import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -21,7 +23,8 @@ data class SettingsUiState(
     val isDarkMode: Boolean = false,
     val currentLanguageCode: String = "vi",
     val displayName: String = "",
-    val email: String = ""
+    val email: String = "",
+    val isNotificationsEnabled: Boolean = true
 )
 
 sealed class SettingsEvent {
@@ -34,6 +37,8 @@ class SettingsViewModel @Inject constructor(
     private val getLanguageUseCase: GetLanguageUseCase,
     private val updateThemeUseCase: UpdateThemeUseCase,
     private val updateLanguageUseCase: UpdateLanguageUseCase,
+    private val getNotificationsEnabledUseCase: GetNotificationsEnabledUseCase,
+    private val updateNotificationsEnabledUseCase: UpdateNotificationsEnabledUseCase,
     private val firebaseAuth: FirebaseAuth
 ) : ViewModel() {
 
@@ -42,14 +47,16 @@ class SettingsViewModel @Inject constructor(
 
     val uiState: StateFlow<SettingsUiState> = combine(
         getThemeUseCase(),
-        getLanguageUseCase()
-    ) { isDark, langCode ->
+        getLanguageUseCase(),
+        getNotificationsEnabledUseCase()
+    ) { isDark, langCode, isNotifEnabled ->
         val currentUser = firebaseAuth.currentUser
         SettingsUiState(
             isDarkMode = isDark,
             currentLanguageCode = langCode,
             displayName = currentUser?.displayName ?: "",
-            email = currentUser?.email ?: ""
+            email = currentUser?.email ?: "",
+            isNotificationsEnabled = isNotifEnabled
         )
     }.stateIn(
         scope = viewModelScope,
@@ -60,6 +67,12 @@ class SettingsViewModel @Inject constructor(
     fun onDarkModeToggled(isDark: Boolean) {
         viewModelScope.launch {
             updateThemeUseCase(isDark)
+        }
+    }
+    
+    fun onNotificationsToggled(isEnabled: Boolean) {
+        viewModelScope.launch {
+            updateNotificationsEnabledUseCase(isEnabled)
         }
     }
 

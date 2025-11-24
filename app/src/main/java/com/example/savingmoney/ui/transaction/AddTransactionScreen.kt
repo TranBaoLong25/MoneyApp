@@ -42,6 +42,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.savingmoney.data.model.Category
 import com.example.savingmoney.data.model.TransactionType
+import com.example.savingmoney.ui.navigation.Destinations
+import com.example.savingmoney.utils.NotificationUtils
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
@@ -51,7 +53,7 @@ import java.util.*
 fun AddTransactionScreen(
     viewModel: AddTransactionViewModel = hiltViewModel(),
     onNavigateUp: () -> Unit,
-    onTransactionAdded: () -> Unit
+    onNavigate: (String) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
@@ -60,11 +62,24 @@ fun AddTransactionScreen(
     val sheetState = rememberModalBottomSheetState()
     val scope = rememberCoroutineScope()
 
+    // Lắng nghe hiệu ứng thông báo từ ViewModel
+    LaunchedEffect(Unit) {
+        viewModel.effect.collect { effect ->
+            if (effect is TransactionEffect.ShowNotification) {
+                NotificationUtils.showTransactionNotification(context, effect.title, effect.message)
+            }
+        }
+    }
+
     LaunchedEffect(uiState.transactionSaved) {
         if (uiState.transactionSaved) {
-            Toast.makeText(context, "Lưu giao dịch thành công!", Toast.LENGTH_SHORT).show()
-            viewModel.transactionSavedComplete()
-            onTransactionAdded()
+            // Navigate sang màn hình Success
+            val txId = uiState.savedTransactionId
+            if (txId != null) {
+                // Reset flag trước khi navigate
+                viewModel.transactionSavedComplete()
+                onNavigate(Destinations.TransactionSuccess.replace("{transactionId}", txId))
+            }
         }
     }
 

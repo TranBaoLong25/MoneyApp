@@ -17,4 +17,5 @@ object Destinations {
     const val Planning = "planning_list"
     const val AddPlan = "add_plan"
     const val PlanDetail = "plan_detail/{planId}"  // <- phải có {planId}
+    const val TransactionSuccess = "transaction_success/{transactionId}"
  }

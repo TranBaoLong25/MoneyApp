@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.savingmoney.data.model.Category
 import com.example.savingmoney.data.model.Plan
+import com.example.savingmoney.utils.FormatUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -79,7 +80,7 @@ fun AddPlanScreen(
                     val plan = Plan(
                         id = java.util.UUID.randomUUID().toString(),
                         title = selectedCategory!!.name,
-                        description = "Ngân sách: ${budget}₫",
+                        description = "Ngân sách: ${FormatUtils.formatCurrency(budget)}",
                         budgetAmount = budget,
                         categoryBudgets = mapOf(selectedCategory!!.name to budget)
                     )

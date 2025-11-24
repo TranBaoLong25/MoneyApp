@@ -1,10 +1,14 @@
 package com.example.savingmoney.ui.settings
 
+import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Build
 import android.provider.Settings
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -70,6 +74,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.core.os.LocaleListCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.savingmoney.ui.components.BottomNavigationBar
@@ -89,6 +94,17 @@ fun SettingsScreen(
     // Colors consistent with other screens
     val mainTextColor = Color(0xFF003B5C)
     val iconColor = Color(0xFF005B96)
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        viewModel.onNotificationsToggled(isGranted)
+        if (isGranted) {
+            Toast.makeText(context, "Đã bật thông báo", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(context, "Bạn đã từ chối quyền thông báo", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     // Lắng nghe các sự kiện từ ViewModel để khởi động lại activity
     LaunchedEffect(Unit) {
@@ -159,7 +175,30 @@ fun SettingsScreen(
                     )
                 }
                 item { Spacer(modifier = Modifier.height(8.dp)) }
-                item { GeneralSettingsSection(uiState, viewModel, mainTextColor, iconColor) }
+                item { 
+                    GeneralSettingsSection(
+                        uiState, 
+                        viewModel, 
+                        mainTextColor, 
+                        iconColor,
+                        onToggleNotification = { enabled ->
+                            if (enabled) {
+                                // Check permission for Android 13+
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                    if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {
+                                        viewModel.onNotificationsToggled(true)
+                                    } else {
+                                        permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                    }
+                                } else {
+                                    viewModel.onNotificationsToggled(true)
+                                }
+                            } else {
+                                viewModel.onNotificationsToggled(false)
+                            }
+                        }
+                    ) 
+                }
                 item { AboutSection(onLogout = onLogout, mainTextColor, iconColor) }
                 item { Spacer(modifier = Modifier.height(40.dp)) }
             }
@@ -231,9 +270,9 @@ fun GeneralSettingsSection(
     uiState: SettingsUiState,
     viewModel: SettingsViewModel,
     textColor: Color,
-    iconColor: Color
+    iconColor: Color,
+    onToggleNotification: (Boolean) -> Unit
 ) {
-    val context = LocalContext.current
     var showLanguageDialog by remember { mutableStateOf(false) }
 
     if (showLanguageDialog) {
@@ -283,7 +322,19 @@ fun GeneralSettingsSection(
             title = "Thông báo",
             iconColor = Color(0xFFFF9800),
             textColor = textColor,
-            onClick = { openAppNotificationSettings(context) }
+            trailingContent = {
+                Switch(
+                    checked = uiState.isNotificationsEnabled,
+                    onCheckedChange = onToggleNotification,
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = Color.White,
+                        checkedTrackColor = Color(0xFF005B96),
+                        uncheckedThumbColor = Color.White,
+                        uncheckedTrackColor = Color(0xFFE0E0E0)
+                    ),
+                    modifier = Modifier.scale(0.8f)
+                )
+            }
         )
     }
 }
@@ -294,13 +345,51 @@ fun AboutSection(
     textColor: Color,
     iconColor: Color
 ) {
+    val context = LocalContext.current
+    var showSupportDialog by remember { mutableStateOf(false) }
+    var showContactDialog by remember { mutableStateOf(false) }
+    var showPolicyDialog by remember { mutableStateOf(false) }
+    var showBugReportDialog by remember { mutableStateOf(false) }
+
+    if (showSupportDialog) {
+        InfoDialog(
+            title = "Hỗ trợ & FAQ",
+            content = "Nếu bạn gặp sự cố, vui lòng kiểm tra kết nối mạng hoặc khởi động lại ứng dụng.\n\nCâu hỏi thường gặp:\n- Làm sao để thêm giao dịch? -> Nhấn nút + ở màn hình chính.\n- Làm sao để xem báo cáo? -> Vào tab Thống kê.",
+            onDismiss = { showSupportDialog = false }
+        )
+    }
+
+    if (showContactDialog) {
+        InfoDialog(
+            title = "Liên hệ",
+            content = "Email: support@savingmoneyapp.com\nHotline: 1900 1234\nĐịa chỉ: 123 Đường ABC, Quận 1, TP.HCM",
+            onDismiss = { showContactDialog = false }
+        )
+    }
+
+    if (showPolicyDialog) {
+        InfoDialog(
+            title = "Điều khoản & Chính sách",
+            content = "Chúng tôi cam kết bảo mật dữ liệu của bạn. Ứng dụng không chia sẻ thông tin cá nhân với bên thứ ba mà không có sự đồng ý của bạn.\n\nBằng việc sử dụng ứng dụng, bạn đồng ý với các điều khoản sử dụng của chúng tôi.",
+            onDismiss = { showPolicyDialog = false }
+        )
+    }
+
+    if (showBugReportDialog) {
+        InfoDialog(
+            title = "Báo lỗi",
+            content = "Nếu bạn phát hiện lỗi, vui lòng gửi email mô tả chi tiết về lỗi đến support@savingmoneyapp.com. Chúng tôi sẽ cố gắng khắc phục sớm nhất có thể.",
+            onDismiss = { showBugReportDialog = false }
+        )
+    }
+
     SettingsGroup("Thông tin & Hỗ trợ", textColor) {
         SettingItem(
             icon = Icons.Default.Support,
             title = "Hỗ trợ & FAQ",
             iconColor = Color(0xFF673AB7),
             textColor = textColor,
-            onClick = {}
+            onClick = { showSupportDialog = true }
         )
         Divider(color = Color(0xFFF0F0F0), modifier = Modifier.padding(horizontal = 56.dp))
         SettingItem(
@@ -308,7 +397,7 @@ fun AboutSection(
             title = "Đánh giá ứng dụng",
             iconColor = Color(0xFFFFC107),
             textColor = textColor,
-            onClick = {}
+            onClick = { Toast.makeText(context, "Cảm ơn bạn đã đánh giá 5 sao!", Toast.LENGTH_SHORT).show() }
         )
         Divider(color = Color(0xFFF0F0F0), modifier = Modifier.padding(horizontal = 56.dp))
         SettingItem(
@@ -316,7 +405,7 @@ fun AboutSection(
             title = "Liên hệ",
             iconColor = Color(0xFF2196F3),
             textColor = textColor,
-            onClick = {}
+            onClick = { showContactDialog = true }
         )
         Divider(color = Color(0xFFF0F0F0), modifier = Modifier.padding(horizontal = 56.dp))
         SettingItem(
@@ -324,7 +413,7 @@ fun AboutSection(
             title = "Điều khoản & Chính sách",
             iconColor = Color(0xFF607D8B),
             textColor = textColor,
-            onClick = {}
+            onClick = { showPolicyDialog = true }
         )
         Divider(color = Color(0xFFF0F0F0), modifier = Modifier.padding(horizontal = 56.dp))
         SettingItem(
@@ -332,7 +421,7 @@ fun AboutSection(
             title = "Báo lỗi",
             iconColor = Color(0xFFFF5722),
             textColor = textColor,
-            onClick = {}
+            onClick = { showBugReportDialog = true }
         )
         Divider(color = Color(0xFFF0F0F0), modifier = Modifier.padding(horizontal = 56.dp))
         SettingItem(
@@ -344,6 +433,22 @@ fun AboutSection(
             onClick = onLogout
         )
     }
+}
+
+@Composable
+fun InfoDialog(title: String, content: String, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title, fontWeight = FontWeight.Bold) },
+        text = { Text(content, style = MaterialTheme.typography.bodyMedium) },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Đóng", color = Color(0xFF005B96))
+            }
+        },
+        containerColor = Color.White,
+        shape = RoundedCornerShape(16.dp)
+    )
 }
 
 @Composable

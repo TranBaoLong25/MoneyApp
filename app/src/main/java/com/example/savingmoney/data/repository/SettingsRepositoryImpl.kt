@@ -21,4 +21,10 @@ class SettingsRepositoryImpl @Inject constructor(
     override suspend fun saveLanguageCode(code: String) {
         dataStore.saveLanguageCode(code)
     }
+
+    override fun getNotificationsEnabled(): Flow<Boolean> = dataStore.notificationsEnabled
+
+    override suspend fun saveNotificationsEnabled(enabled: Boolean) {
+        dataStore.saveNotificationsEnabled(enabled)
+    }
 }

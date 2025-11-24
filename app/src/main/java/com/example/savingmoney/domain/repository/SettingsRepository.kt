@@ -9,4 +9,7 @@ interface SettingsRepository {
 
     fun getLanguageCode(): Flow<String>
     suspend fun saveLanguageCode(code: String)
+
+    fun getNotificationsEnabled(): Flow<Boolean>
+    suspend fun saveNotificationsEnabled(enabled: Boolean)
 }

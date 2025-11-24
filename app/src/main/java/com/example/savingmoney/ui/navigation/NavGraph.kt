@@ -16,6 +16,7 @@ import com.example.savingmoney.ui.settings.SettingsScreen
 import com.example.savingmoney.ui.stats.StatsScreen
 import com.example.savingmoney.ui.transaction.AddTransactionScreen
 import com.example.savingmoney.ui.transaction.TransactionListScreen
+import com.example.savingmoney.ui.transaction.TransactionSuccessScreen
 
 // Extension để navigation không reset UI
 fun NavHostController.navigateSingleTop(route: String) {
@@ -89,9 +90,27 @@ fun NavGraph(
         composable(Destinations.AddTransaction) {
             AddTransactionScreen(
                 onNavigateUp = { navController.navigateUp() },
-                onTransactionAdded = { navController.navigate(Destinations.Home) {
-                    popUpTo(Destinations.Home) { inclusive = true }
-                } }
+                onNavigate = { route -> navController.navigate(route) }
+            )
+        }
+
+        composable(
+            route = Destinations.TransactionSuccess,
+            arguments = listOf(navArgument("transactionId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val transactionId = backStackEntry.arguments?.getString("transactionId") ?: ""
+            TransactionSuccessScreen(
+                transactionId = transactionId,
+                onNavigateHome = { 
+                    navController.navigate(Destinations.Home) {
+                        popUpTo(Destinations.Home) { inclusive = true }
+                    }
+                },
+                onNavigateTransactionList = { 
+                    navController.navigate(Destinations.TransactionList) {
+                         popUpTo(Destinations.Home) { inclusive = false }
+                    }
+                }
             )
         }
 

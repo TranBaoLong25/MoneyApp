@@ -8,7 +8,9 @@ import com.example.savingmoney.data.model.TransactionType
 import com.example.savingmoney.data.repository.TransactionRepository
 import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -25,8 +27,13 @@ data class AddTransactionUiState(
     val incomeCategories: List<Category> = emptyList(),
     val isSaving: Boolean = false,
     val transactionSaved: Boolean = false,
+    val savedTransactionId: String? = null, // Thêm trường này
     val error: String? = null
 )
+
+sealed class TransactionEffect {
+    data class ShowNotification(val title: String, val message: String) : TransactionEffect()
+}
 
 @HiltViewModel
 class AddTransactionViewModel @Inject constructor(
@@ -36,6 +43,9 @@ class AddTransactionViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(AddTransactionUiState())
     val uiState = _uiState.asStateFlow()
+
+    private val _effect = MutableSharedFlow<TransactionEffect>()
+    val effect = _effect.asSharedFlow()
 
     init {
         loadCategories()
@@ -110,6 +120,7 @@ class AddTransactionViewModel @Inject constructor(
             val amount = _uiState.value.amountInput.toDoubleOrNull()
             val category = _uiState.value.selectedCategory
             val userId = firebaseAuth.currentUser?.uid
+            val type = _uiState.value.selectedType
 
             if (amount == null || amount <= 0) {
                 _uiState.update { it.copy(error = "Vui lòng nhập số tiền hợp lệ.") }
@@ -129,7 +140,7 @@ class AddTransactionViewModel @Inject constructor(
             val transaction = Transaction(
                 id = UUID.randomUUID().toString(), 
                 userId = userId,
-                type = _uiState.value.selectedType,
+                type = type,
                 amount = amount,
                 categoryName = category.name,
                 date = _uiState.value.selectedDate,
@@ -138,7 +149,19 @@ class AddTransactionViewModel @Inject constructor(
 
             try {
                 transactionRepository.addTransaction(transaction)
-                _uiState.update { it.copy(isSaving = false, transactionSaved = true) }
+                _uiState.update { 
+                    it.copy(
+                        isSaving = false, 
+                        transactionSaved = true,
+                        savedTransactionId = transaction.id // Lưu ID để chuyển màn hình
+                    ) 
+                }
+                
+                // Gửi effect để hiện thông báo
+                val title = if (type == TransactionType.EXPENSE) "Đã thêm khoản chi" else "Đã thêm khoản thu"
+                val message = "Giao dịch ${category.name} với số tiền ${com.example.savingmoney.utils.FormatUtils.formatCurrency(amount)} đã được lưu."
+                _effect.emit(TransactionEffect.ShowNotification(title, message))
+                
             } catch (e: Exception) {
                 _uiState.update { it.copy(isSaving = false, error = e.localizedMessage ?: "Không thể lưu giao dịch.") }
             }
@@ -150,6 +173,6 @@ class AddTransactionViewModel @Inject constructor(
     }
     
     fun transactionSavedComplete() {
-        _uiState.update { it.copy(transactionSaved = false) }
+        _uiState.update { it.copy(transactionSaved = false, savedTransactionId = null) }
     }
 }

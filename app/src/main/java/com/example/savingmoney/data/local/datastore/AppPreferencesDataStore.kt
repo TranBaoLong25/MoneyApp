@@ -24,6 +24,7 @@ class AppPreferencesDataStore @Inject constructor(
     private object PreferencesKeys {
         val IS_DARK_MODE = booleanPreferencesKey("is_dark_mode")
         val LANGUAGE_CODE = stringPreferencesKey("language_code")
+        val NOTIFICATIONS_ENABLED = booleanPreferencesKey("notifications_enabled")
     }
 
     private val dataStore = context.dataStore
@@ -51,6 +52,19 @@ class AppPreferencesDataStore @Inject constructor(
     suspend fun saveLanguageCode(code: String) {
         dataStore.edit { preferences ->
             preferences[PreferencesKeys.LANGUAGE_CODE] = code
+        }
+    }
+
+    // ➡️ Lấy trạng thái thông báo
+    val notificationsEnabled: Flow<Boolean> = dataStore.data
+        .map { preferences ->
+            preferences[PreferencesKeys.NOTIFICATIONS_ENABLED] ?: true // Mặc định là Bật thông báo
+        }
+
+    // 🔄 Lưu trạng thái thông báo
+    suspend fun saveNotificationsEnabled(enabled: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[PreferencesKeys.NOTIFICATIONS_ENABLED] = enabled
         }
     }
 }

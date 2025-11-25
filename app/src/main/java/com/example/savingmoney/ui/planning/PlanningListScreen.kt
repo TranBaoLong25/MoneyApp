@@ -10,6 +10,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -82,8 +84,6 @@ fun PlanningListScreen(
                     style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                     color = Color(0xFF003B5C)
                 )
-
-
             }
 
             LazyColumn(
@@ -146,13 +146,13 @@ fun OverviewCard(income: Double, expense: Double) {
     ) {
         Column(
             modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp) // Giảm khoảng cách giữa các item
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(
                 "Tổng Quan Tháng",
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                 color = Color(0xFF003B5C),
-                modifier = Modifier.padding(bottom = 4.dp) // Thêm padding dưới tiêu đề
+                modifier = Modifier.padding(bottom = 4.dp)
             )
 
             OverviewItem(label = "Thu nhập", amount = income, color = Color(0xFF2E7D32))
@@ -166,6 +166,10 @@ fun OverviewCard(income: Double, expense: Double) {
 
 @Composable
 fun OverviewItem(label: String, amount: Double, color: Color) {
+    val displayText = if (amount < 0) "-${FormatUtils.formatCurrency(-amount)}"
+    else FormatUtils.formatCurrency(amount)
+    val textColor = if (amount < 0) Color(0xFFFF5252) else color
+
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -173,9 +177,9 @@ fun OverviewItem(label: String, amount: Double, color: Color) {
     ) {
         Text(label, style = MaterialTheme.typography.bodyLarge, color = Color.Gray)
         AutoResizeText(
-            text = FormatUtils.formatCurrency(amount),
+            text = displayText,
             style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-            color = color
+            color = textColor
         )
     }
 }
@@ -237,6 +241,7 @@ fun SpendAnalysisCard(
                                 startAngle += sweepAngle
                             }
                         }
+
                         // Text ở giữa biểu đồ
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
@@ -254,17 +259,18 @@ fun SpendAnalysisCard(
 
                     Spacer(modifier = Modifier.width(20.dp))
 
-                    // Legend bên phải
+                    // Legend bên phải có cuộn dọc nếu nhiều
                     Column(
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier
+                            .weight(1f)
+                            .heightIn(max = 140.dp)
+                            .verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        expenseByCategory.take(4).forEach { (category, amount) ->
+                        expenseByCategory.forEach { (category, amount) ->
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                // Thay Box tròn bằng icon của category
                                 Box(
-                                    modifier = Modifier
-                                        .size(20.dp),
+                                    modifier = Modifier.size(20.dp),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
@@ -291,14 +297,12 @@ fun SpendAnalysisCard(
                             }
                         }
                     }
-
                 }
             }
 
             // Smart Tip
             Spacer(modifier = Modifier.height(20.dp))
             if (!transactionsEmpty && !smartTip.isNullOrBlank()) {
-                // Chỉ 2 trường hợp
                 val tipColor = if (smartTip == "Tiêu xài quá đà!") Color.Red else Color(0xFF00C853)
                 val backgroundColor = tipColor.copy(alpha = 0.15f)
 
@@ -327,6 +331,7 @@ fun SpendAnalysisCard(
         }
     }
 }
+
 
 
 @Composable

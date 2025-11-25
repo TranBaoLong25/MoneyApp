@@ -2,6 +2,7 @@ package com.example.savingmoney.ui.stats
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -23,6 +24,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -141,13 +143,13 @@ fun OverviewCard(income: Double, expense: Double) {
     ) {
         Column(
             modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp) // Giảm khoảng cách giữa các item
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(
                 "Tổng Quan Tháng",
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                 color = Color(0xFF003B5C),
-                modifier = Modifier.padding(bottom = 4.dp) // Thêm padding dưới tiêu đề
+                modifier = Modifier.padding(bottom = 4.dp)
             )
 
             OverviewItem(label = "Thu nhập", amount = income, color = Color(0xFF2E7D32))
@@ -161,6 +163,10 @@ fun OverviewCard(income: Double, expense: Double) {
 
 @Composable
 fun OverviewItem(label: String, amount: Double, color: Color) {
+    val displayText = if (amount < 0) "-${FormatUtils.formatCurrency(-amount)}"
+    else FormatUtils.formatCurrency(amount)
+    val textColor = if (amount < 0) Color(0xFFFF5252) else color
+
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -168,12 +174,13 @@ fun OverviewItem(label: String, amount: Double, color: Color) {
     ) {
         Text(label, style = MaterialTheme.typography.bodyLarge, color = Color.Gray)
         AutoResizeText(
-            text = FormatUtils.formatCurrency(amount),
+            text = displayText,
             style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-            color = color
+            color = textColor
         )
     }
 }
+
 
 
 @Composable
@@ -354,12 +361,15 @@ fun CategoryLegend(
     textColor: Color,
     modifier: Modifier = Modifier
 ) {
-    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(
+        modifier = modifier.verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
         val sortedEntries = remember(expenseByCategory) {
             expenseByCategory.entries.filter { it.value > 0 }.sortedByDescending { it.value }
         }
 
-        sortedEntries.take(5).forEach { (category, expense) ->
+        sortedEntries.forEach { (category, expense) ->
             val percentage = if (totalExpense > 0) (expense / totalExpense).toFloat() else 0f
             val color = categoryColors[category] ?: Color.Gray
 
@@ -413,7 +423,7 @@ fun DailyColumnChart(
     modifier: Modifier = Modifier
 ) {
     val validExpenses = remember(dailyExpenses) {
-        dailyExpenses.filter { it.value > 0 }
+        dailyExpenses.filter { it.value != 0.0 } // Bao gồm cả âm và dương
     }
     val maxValue = remember(validExpenses) {
         validExpenses.values.maxOrNull()?.toFloat() ?: 1f
@@ -432,20 +442,25 @@ fun DailyColumnChart(
         }
     }
 
+    // State lưu ngày đang chọn để hiển thị số tiền
+    var selectedDay by remember { mutableStateOf<Int?>(null) }
+
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(180.dp)
+            .height(220.dp)
             .padding(top = 10.dp)
+            .pointerInput(Unit) {
+                detectTapGestures { offset ->
+                    val slotWidth = size.width / daysInMonth
+                    val dayTapped = ((offset.x / slotWidth) + 1).toInt()
+                    selectedDay = if (dayTapped in 1..daysInMonth) dayTapped else null
+                }
+            }
     ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
-            if (size.width <= 0 || size.height <= 0) {
-                return@Canvas
-            }
-
             val xAxisLabelAreaHeight = 30.dp.toPx()
             val chartAreaHeight = size.height - xAxisLabelAreaHeight
-            if (chartAreaHeight <= 0) return@Canvas
 
             val width = size.width
 
@@ -469,24 +484,40 @@ fun DailyColumnChart(
                 if (day in 1..daysInMonth) {
                     val barHeight = (expense.toFloat() / maxValue) * chartAreaHeight
                     val actualBarHeight = barHeight.coerceAtLeast(1.dp.toPx())
-
                     val left = (day - 1) * slotWidth + (slotWidth - barWidth) / 2f
 
-                    if (barWidth > 0) {
-                        drawRoundRect(
-                            color = barColor.copy(alpha = 0.85f),
-                            topLeft = Offset(left, chartAreaHeight - actualBarHeight),
-                            size = Size(barWidth, actualBarHeight),
-                            cornerRadius = CornerRadius(4f, 4f)
-                        )
-                    }
+                    val barActualColor = if (expense < 0) Color(0xFFFF5252) else barColor
 
-                    if (day == 1 || day % 5 == 0 || daysInMonth <= 15) {
+                    drawRoundRect(
+                        color = barActualColor.copy(alpha = 0.85f),
+                        topLeft = Offset(left, chartAreaHeight - actualBarHeight),
+                        size = Size(barWidth, actualBarHeight),
+                        cornerRadius = CornerRadius(4f, 4f)
+                    )
+
+                    // Vẽ nhãn ngày
+                    drawContext.canvas.nativeCanvas.drawText(
+                        day.toString(),
+                        left + barWidth / 2,
+                        chartAreaHeight + xAxisLabelAreaHeight - 5.dp.toPx(),
+                        textPaint
+                    )
+
+                    // Nếu cột được chọn, vẽ tooltip hiển thị số tiền
+                    if (selectedDay == day) {
+                        val tooltipText = if (expense < 0) "-${FormatUtils.formatCurrency(-expense)}"
+                        else FormatUtils.formatCurrency(expense)
                         drawContext.canvas.nativeCanvas.drawText(
-                            day.toString(),
+                            tooltipText,
                             left + barWidth / 2,
-                            chartAreaHeight + xAxisLabelAreaHeight - 5.dp.toPx(),
-                            textPaint
+                            chartAreaHeight - actualBarHeight - 10.dp.toPx(),
+                            android.graphics.Paint().apply {
+                                color = Color.Black.toArgb()
+                                textAlign = android.graphics.Paint.Align.CENTER
+                                textSize = with(density) { 12.dp.toPx() }
+                                isFakeBoldText = true
+                                isAntiAlias = true
+                            }
                         )
                     }
                 }

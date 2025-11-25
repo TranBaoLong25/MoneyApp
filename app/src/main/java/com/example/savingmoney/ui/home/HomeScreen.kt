@@ -212,7 +212,7 @@ fun BalanceCard(balance: Double, income: Double, expense: Double) {
                     }
                     Spacer(modifier = Modifier.width(12.dp))
                     Text(
-                        "Tổng Quan Hôm Nay",
+                        "Tổng Quan ",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
                         color = Color.White.copy(alpha = 0.9f)
@@ -226,12 +226,17 @@ fun BalanceCard(balance: Double, income: Double, expense: Double) {
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.White.copy(alpha = 0.8f)
                 )
+                // Hiển thị số dư âm màu đỏ, số dương màu xanh
+                val balanceText = if (balance < 0) "-${formatCurrency(-balance)}" else formatCurrency(balance)
+                val balanceColor = if (balance >= 0) Color(0xFF00FFA3) else Color(0xFFFF5252)
+
                 AutoResizeText(
-                    text = formatCurrency(balance),
+                    text = balanceText,
                     style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                    color = Color.White,
+                    color = balanceColor,
                     modifier = Modifier.fillMaxWidth()
                 )
+
 
                 Spacer(modifier = Modifier.height(20.dp))
 
@@ -257,6 +262,7 @@ fun BalanceCard(balance: Double, income: Double, expense: Double) {
         }
     }
 }
+
 
 @Composable
 fun StatsInfoItem(

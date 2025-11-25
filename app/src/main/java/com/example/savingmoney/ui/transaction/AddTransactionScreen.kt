@@ -374,9 +374,13 @@ fun AutoResizingCurrencyField(
 /**
  * VisualTransformation để định dạng số tiền và xử lý vị trí con trỏ chính xác.
  */
-class CurrencyVisualTransformation(private val currencySymbol: String = "₫") : VisualTransformation {
-    private val formatter = DecimalFormat("#,##0")
 
+    class CurrencyVisualTransformation(private val currencySymbol: String = " ₫") : VisualTransformation {
+        private val formatter = DecimalFormat("#,##0").apply {
+            this.decimalFormatSymbols = this.decimalFormatSymbols.apply {
+                groupingSeparator = '.'
+            }
+        }
     override fun filter(text: AnnotatedString): TransformedText {
         val cleanString = text.text.filter { it.isDigit() }
 

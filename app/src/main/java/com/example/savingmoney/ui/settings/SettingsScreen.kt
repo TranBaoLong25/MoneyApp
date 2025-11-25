@@ -4,12 +4,15 @@ import android.Manifest
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.BitmapFactory
 import android.os.Build
 import android.provider.Settings
+import android.util.Base64
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -72,7 +75,10 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -82,6 +88,23 @@ import androidx.core.os.LocaleListCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.savingmoney.ui.components.BottomNavigationBar
 import com.example.savingmoney.ui.theme.BackgroundGradients
+
+// Thêm hàm helper chuyển Base64 sang ImageBitmap (Tái sử dụng từ ProfileScreen)
+@Composable
+fun base64ToImageBitmap(base64String: String?): ImageBitmap? {
+    return remember(base64String) {
+        if (base64String.isNullOrBlank()) {
+            null
+        } else {
+            try {
+                val decodedBytes = Base64.decode(base64String, Base64.DEFAULT)
+                BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size).asImageBitmap()
+            } catch (e: Exception) {
+                null
+            }
+        }
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -176,16 +199,17 @@ fun SettingsScreen(
                     UserProfileSection(
                         userName = uiState.displayName,
                         email = uiState.email,
+                        photoUrl = uiState.photoUrl, // <-- TRUYỀN CHUỖI BASE64 VÀO ĐÂY
                         onNavigateToProfile = onNavigateToProfile,
                         textColor = mainTextColor
                     )
                 }
                 item { Spacer(modifier = Modifier.height(8.dp)) }
-                item { 
+                item {
                     GeneralSettingsSection(
-                        uiState, 
-                        viewModel, 
-                        mainTextColor, 
+                        uiState,
+                        viewModel,
+                        mainTextColor,
                         iconColor,
                         onToggleNotification = { enabled ->
                             if (enabled) {
@@ -203,7 +227,7 @@ fun SettingsScreen(
                                 viewModel.onNotificationsToggled(false)
                             }
                         }
-                    ) 
+                    )
                 }
                 item { AboutSection(onLogout = onLogout, mainTextColor, iconColor) }
                 item { Spacer(modifier = Modifier.height(40.dp)) }
@@ -216,9 +240,12 @@ fun SettingsScreen(
 fun UserProfileSection(
     userName: String,
     email: String,
+    photoUrl: String?, // <-- NHẬN VÀO CHUỖI BASE64
     onNavigateToProfile: () -> Unit,
     textColor: Color
 ) {
+    // Chuyển chuỗi Base64 thành ImageBitmap
+    val imageBitmap = base64ToImageBitmap(photoUrl)
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -243,12 +270,24 @@ fun UserProfileSection(
                     ),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    userName.firstOrNull()?.toString()?.uppercase() ?: "U",
-                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                    color = Color.White
-                )
-            }
+                // HIỂN THỊ ẢNH HOẶC PLACEHOLDER
+                if (imageBitmap != null) {
+                    Image(
+                        bitmap = imageBitmap,
+                        contentDescription = "Ảnh đại diện",
+                        modifier = Modifier.fillMaxSize().clip(CircleShape),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    // PHẦN SỬA CHỮA: Đảm bảo Text nằm trong khối else của Box
+                    Text(
+                        userName.firstOrNull()?.toString()?.uppercase() ?: "U",
+                        style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                        color = Color.White
+                    )
+                }
+            } // <-- Đóng Box cho ảnh/placeholder
+
             Spacer(Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(

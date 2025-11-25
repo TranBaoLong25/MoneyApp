@@ -41,14 +41,37 @@ import com.example.savingmoney.ui.navigation.Destinations
 import com.example.savingmoney.ui.settings.SettingsViewModel
 import com.example.savingmoney.ui.theme.BackgroundGradients
 import com.example.savingmoney.utils.FormatUtils.formatCurrency
+// *** THÊM CÁC IMPORTS CẦN THIẾT VÀ HÀM HELPER ***
+import android.graphics.BitmapFactory
+import android.util.Base64
+import androidx.compose.foundation.Image
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 
+// Hàm trợ giúp chuyển Base64 sang ImageBitmap (Tái sử dụng)
+@Composable
+fun base64ToImageBitmap(base64String: String?): ImageBitmap? {
+    return remember(base64String) {
+        if (base64String.isNullOrBlank()) {
+            null
+        } else {
+            try {
+                val decodedBytes = Base64.decode(base64String, Base64.DEFAULT)
+                BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size).asImageBitmap()
+            } catch (_: Exception) {
+                null
+            }
+        }
+    }
+}
 @Composable
 fun HomeScreen(
     onNavigateTo: (String) -> Unit,
     onNavigateToProfile: () -> Unit,
 
     viewModel: HomeViewModel = hiltViewModel(),
-            settingsViewModel: SettingsViewModel = hiltViewModel() // thêm viewModel cho gradient
+    settingsViewModel: SettingsViewModel = hiltViewModel() // thêm viewModel cho gradient
 
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -86,20 +109,25 @@ fun HomeScreen(
                         .padding(horizontal = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(24.dp)
                 ) {
-                    item { HeaderSection(uiState.userName, uiState.currentMonthYear, onNavigateToProfile) }
-                    item { 
+                    item { HeaderSection(uiState.userName,
+                        uiState.currentMonthYear,
+                        photoUrl = uiState.photoUrl, // <-- TRUYỀN photoUrl (Base64)
+                        onNavigateToProfile = onNavigateToProfile
+                    )
+                    }
+                    item {
                         BalanceCard(
                             balance = uiState.currentBalance,
                             income = uiState.todayIncome,
                             expense = uiState.todayExpense
-                        ) 
+                        )
                     }
-                    item { 
+                    item {
                         StatsSection(
                             stats = uiState.monthlyStats,
-                            categories = uiState.allCategories, 
+                            categories = uiState.allCategories,
                             onViewAll = { onNavigateTo(Destinations.Stats) }
-                        ) 
+                        )
                     }
                     item {
                         RecentTransactionsSection(
@@ -116,7 +144,9 @@ fun HomeScreen(
 }
 
 @Composable
-fun HeaderSection(userName: String, currentMonth: String, onNavigateToProfile: () -> Unit) {
+fun HeaderSection(userName: String, currentMonth: String, photoUrl: String?, onNavigateToProfile: () -> Unit) { // <-- SỬA: THÊM photoUrl: String?
+    // Chuyển chuỗi Base64 thành ImageBitmap
+    val imageBitmap = base64ToImageBitmap(photoUrl)
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -172,11 +202,21 @@ fun HeaderSection(userName: String, currentMonth: String, onNavigateToProfile: (
                 .clickable(onClick = onNavigateToProfile),
             contentAlignment = Alignment.Center
         ) {
-            Text(
-                text = userName.firstOrNull()?.toString()?.uppercase() ?: "U",
-                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                color = Color.White
-            )
+            if (imageBitmap != null) {
+                // ẢNH PROFILE (Base64)
+                Image(
+                    bitmap = imageBitmap,
+                    contentDescription = "Ảnh đại diện",
+                    modifier = Modifier.fillMaxSize().clip(CircleShape),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                Text(
+                    text = userName.firstOrNull()?.toString()?.uppercase() ?: "U",
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                    color = Color.White
+                )
+            }
         }
     }
 }
@@ -373,7 +413,7 @@ fun StatsSection(
                             )
                         }
                         if (index < minOf(stats.size, 3) - 1) {
-                             HorizontalDivider(color = Color(0xFFF5F5F5), thickness = 1.dp)
+                            HorizontalDivider(color = Color(0xFFF5F5F5), thickness = 1.dp)
                         }
                     }
                 }
@@ -455,7 +495,7 @@ fun RecentTransactionsSection(transactions: List<Transaction>, onViewAll: () -> 
 
 @Composable
 fun TransactionRow(
-    tx: Transaction, 
+    tx: Transaction,
     categories: List<Category>,
     isExpanded: Boolean,
     onItemClick: (String) -> Unit
@@ -465,7 +505,7 @@ fun TransactionRow(
     val isIncome = tx.type == TransactionType.INCOME
     val amountColor = if (isIncome) Color(0xFF2E7D32) else Color(0xFFD32F2F)
     val prefix = if (isIncome) "+" else "-"
-    
+
     val icon = category.getIcon()
     val iconColor = category.getColor()
     val backgroundColor = iconColor.copy(alpha = 0.1f)

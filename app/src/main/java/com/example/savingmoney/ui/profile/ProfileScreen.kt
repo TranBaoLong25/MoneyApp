@@ -58,9 +58,13 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import coil.compose.AsyncImage
 import com.example.savingmoney.ui.settings.SettingsViewModel
 import com.example.savingmoney.ui.theme.BackgroundGradients
+import android.graphics.BitmapFactory // <--- THÊM DÒNG NÀY
+import android.util.Base64 // <--- THÊM DÒNG NÀY
+import androidx.compose.foundation.Image // <--- THÊM DÒNG NÀY
+import androidx.compose.ui.graphics.ImageBitmap // <--- THÊM DÒNG NÀY
+import androidx.compose.ui.graphics.asImageBitmap
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -409,14 +413,39 @@ fun ChangePasswordDialog(onDismiss: () -> Unit, onConfirm: (String, String) -> U
     )
 }
 
+// Hàm trợ giúp chuyển Base64 sang ImageBitmap
+@Composable
+fun base64ToImageBitmap(base64String: String?): ImageBitmap? {
+    return remember(base64String) {
+        if (base64String.isNullOrBlank()) {
+            null
+        } else {
+            try {
+                // Xử lý Base64 string thành ByteArray
+                val decodedBytes = Base64.decode(base64String, Base64.DEFAULT)
+                // Chuyển ByteArray sang Bitmap, sau đó sang ImageBitmap
+                BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size).asImageBitmap()
+            } catch (_: Exception) {
+                // Log lỗi nếu chuỗi Base64 không hợp lệ
+                null
+            }
+        }
+    }
+}
+
 @Composable
 private fun UserInfoHeader(
     userName: String,
     email: String,
-    photoUrl: String?,
+    photoUrl: String?, // Giờ là chuỗi Base64
     onProfilePictureChange: (Uri) -> Unit,
     textColor: Color
 ) {
+    // 1. Chuyển chuỗi Base64 thành ImageBitmap
+    val imageBitmap = base64ToImageBitmap(photoUrl)
+
+    // Loại bỏ imageLoadError vì lỗi tải ảnh được xử lý bởi hàm base64ToImageBitmap (trả về null)
+
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),
         onResult = { uri: Uri? ->
@@ -439,14 +468,16 @@ private fun UserInfoHeader(
                     .clickable { imagePickerLauncher.launch("image/*") },
                 contentAlignment = Alignment.Center
             ) {
-                if (photoUrl != null) {
-                    AsyncImage(
-                        model = photoUrl,
+                // 2. Hiển thị Image nếu ImageBitmap không phải null
+                if (imageBitmap != null) {
+                    Image(
+                        bitmap = imageBitmap,
                         contentDescription = "Ảnh đại diện",
                         modifier = Modifier.fillMaxSize().clip(CircleShape),
                         contentScale = ContentScale.Crop
                     )
                 } else {
+                    // 3. Hiển thị Placeholder khi không có ảnh
                     Box(
                         modifier = Modifier.fillMaxSize().background(Color(0xFFE0F7FA)),
                         contentAlignment = Alignment.Center
@@ -461,7 +492,7 @@ private fun UserInfoHeader(
                 }
             }
 
-            // Edit Icon Overlay
+            // Edit Icon Overlay (giữ nguyên)
             Box(
                 modifier = Modifier.align(Alignment.BottomEnd)
                     .size(36.dp)

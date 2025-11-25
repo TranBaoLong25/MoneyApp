@@ -10,12 +10,26 @@ import com.example.savingmoney.data.model.TransactionType
 import com.example.savingmoney.data.repository.TransactionRepository
 import com.example.savingmoney.utils.TimeUtils
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration // <-- THÊM IMPORT
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
+import java.text.SimpleDateFormat
+import java.util.*
 import javax.inject.Inject
+
+// Lớp dữ liệu trung gian cho profile, để dễ dàng theo dõi bằng StateFlow
+data class UserProfileData(
+    val userName: String = "Người dùng",
+    val photoUrl: String? = null // Chuỗi Base64
+)
 
 // Trạng thái cho Home Screen
 data class HomeUiState(
@@ -29,19 +43,63 @@ data class HomeUiState(
     val recentTransactions: List<Transaction> = emptyList(),
     val allCategories: List<Category> = emptyList(),
     val isLoading: Boolean = true,
-    val error: String? = null
+    val error: String? = null,
+    val photoUrl: String? = null // <-- DỮ LIỆU ẢNH
 )
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val transactionRepository: TransactionRepository,
-    private val firebaseAuth: FirebaseAuth // ✅ SỬ DỤNG FIREBASE AUTH
+    private val firebaseAuth: FirebaseAuth,
+    private val firestore: FirebaseFirestore
 ) : ViewModel() {
 
-    // Lấy thông tin người dùng từ Firebase
     private val currentUser = firebaseAuth.currentUser
 
+    // 1. DỮ LIỆU PROFILE (Sử dụng Flow để cập nhật realtime)
+    private val _userProfileFlow = MutableStateFlow(UserProfileData(
+        userName = currentUser?.displayName ?: currentUser?.email?.split("@")?.firstOrNull() ?: "Bạn"
+    ))
+
+    private var profileListener: ListenerRegistration? = null // Biến giữ Listener
+
+    // 2. HÀM START REALTIME LISTENER
+    private fun startRealtimeProfileListener() {
+        val user = firebaseAuth.currentUser
+        val uid = user?.uid ?: return
+
+        profileListener?.remove()
+
+        // Bắt đầu lắng nghe document của người dùng
+        profileListener = firestore.collection("users").document(uid)
+            .addSnapshotListener { snapshot, e ->
+                if (e != null) {
+                    println("Error loading user profile data from Firestore: ${e.message}")
+                    return@addSnapshotListener
+                }
+
+                val authUser = firebaseAuth.currentUser
+                val base64String = snapshot?.getString("profilePictureBase64")
+
+                // Cập nhật Flow Profile (TỰ ĐỘNG KÍCH HOẠT COMBINE)
+                _userProfileFlow.update {
+                    it.copy(
+                        userName = authUser?.displayName ?: it.userName,
+                        photoUrl = base64String // Cập nhật realtime
+                    )
+                }
+            }
+    }
+
+    // Đảm bảo dừng lắng nghe khi ViewModel bị hủy
+    override fun onCleared() {
+        super.onCleared()
+        profileListener?.remove()
+    }
+
+
     private val expenseCategories = listOf(
+        // ... (Danh sách Categories giữ nguyên)
         Category(name = "Ăn uống", type = TransactionType.EXPENSE, iconName = "Restaurant", color = "#FF5733"),
         Category(name = "Đi lại", type = TransactionType.EXPENSE, iconName = "Commute", color = "#FFC300"),
         Category(name = "Hóa đơn", type = TransactionType.EXPENSE, iconName = "ReceiptLong", color = "#C70039"),
@@ -65,60 +123,53 @@ class HomeViewModel @Inject constructor(
     )
     private val allCategories = expenseCategories + incomeCategories
 
-    // Kết hợp tất cả các luồng dữ liệu cần thiết
+    // 3. SỬA ĐỔI HÀM COMBINE (Thêm _userProfileFlow)
     val uiState: StateFlow<HomeUiState> = combine(
-        // Luồng 1: Tất cả các giao dịch
         transactionRepository.getAllTransactions(),
-        
-        // Luồng 2: Thống kê chi tiêu tháng này
         transactionRepository.getMonthlyExpenseStats(
-            TimeUtils.getStartOfMonth(), 
+            TimeUtils.getStartOfMonth(),
             TimeUtils.getEndOfMonth()
         ),
-
-        // Luồng 3: Tổng thu/chi tháng này
         transactionRepository.getIncomeExpenseSummary(
-            TimeUtils.getStartOfMonth(), 
+            TimeUtils.getStartOfMonth(),
             TimeUtils.getEndOfMonth()
-        )
-
-    ) { allTransactions, monthlyStats, monthlySummary ->
+        ),
+        _userProfileFlow
+    ) { allTransactions, monthlyStats, monthlySummary, profileData ->
 
         // --- TÍNH TOÁN DỮ LIỆU ---
-
-        // 1. Tính tổng số dư hiện tại
         val totalIncome = allTransactions.filter { it.type == TransactionType.INCOME }.sumOf { it.amount }
         val totalExpense = allTransactions.filter { it.type == TransactionType.EXPENSE }.sumOf { it.amount }
         val currentBalance = totalIncome - totalExpense
-
-        // 2. Lọc giao dịch hôm nay
         val todayStart = TimeUtils.getStartOfDay()
         val todayEnd = TimeUtils.getEndOfDay()
         val todayTransactions = allTransactions.filter { it.date in todayStart..todayEnd }
-
-        // 3. Tính tổng thu/chi hôm nay
         val todayIncome = todayTransactions.filter { it.type == TransactionType.INCOME }.sumOf { it.amount }
         val todayExpense = todayTransactions.filter { it.type == TransactionType.EXPENSE }.sumOf { it.amount }
-        
-        // 4. Lấy 3 giao dịch gần nhất
         val recentTransactions = allTransactions.take(3)
 
         // --- TRẢ VỀ TRẠNG THÁI MỚI ---
         HomeUiState(
-            userName = currentUser?.displayName ?: currentUser?.email?.split("@")?.firstOrNull() ?: "Bạn",
+            userName = profileData.userName,
             currentMonthYear = TimeUtils.getCurrentMonthYearString(),
             currentBalance = currentBalance,
             todayIncome = todayIncome,
             todayExpense = todayExpense,
             monthlySummary = monthlySummary,
-            monthlyStats = monthlyStats.take(5), // Chỉ lấy 5 hạng mục chi tiêu nhiều nhất
+            monthlyStats = monthlyStats.take(5),
             recentTransactions = recentTransactions,
             allCategories = allCategories,
-            isLoading = false // Dữ liệu đã được tải xong
+            isLoading = false,
+            photoUrl = profileData.photoUrl
         )
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
-        initialValue = HomeUiState() // Giá trị ban đầu khi chưa có dữ liệu
+        initialValue = HomeUiState()
     )
+
+    // 4. GỌI HÀM TẢI PROFILE KHI KHỞI TẠO
+    init {
+        startRealtimeProfileListener()
+    }
 }

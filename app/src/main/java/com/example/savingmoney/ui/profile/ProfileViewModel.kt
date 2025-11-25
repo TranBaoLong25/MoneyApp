@@ -1,19 +1,25 @@
 package com.example.savingmoney.ui.profile
 
 import android.net.Uri
+import android.util.Base64
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.UserProfileChangeRequest
-import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.firestore.FirebaseFirestore
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
+import com.google.firebase.firestore.SetOptions // <-- Cần cho onProfilePictureChanged
+import com.google.firebase.firestore.ListenerRegistration // <-- QUAN TRỌNG: Quản lý Listener
+import java.io.InputStream
 import javax.inject.Inject
 
 data class ProfileUiState(
@@ -29,68 +35,118 @@ data class ProfileUiState(
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
     private val firebaseAuth: FirebaseAuth,
-    private val firebaseStorage: FirebaseStorage
+    private val firestore: FirebaseFirestore
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProfileUiState())
     val uiState = _uiState.asStateFlow()
 
+    private var profileListener: ListenerRegistration? = null // Khai báo biến giữ Listener
+
     init {
-        loadCurrentUser()
+        // Bắt đầu lắng nghe ngay khi ViewModel khởi tạo
+        startRealtimeProfileListener()
     }
 
-    fun loadCurrentUser() {
-        val user = firebaseAuth.currentUser
-        _uiState.update {
-            it.copy(
-                displayName = user?.displayName ?: "",
-                email = user?.email ?: "",
-                phoneNumber = user?.phoneNumber ?: "",
-                photoUrl = user?.photoUrl?.toString()
-            )
-        }
+    // Đảm bảo dừng lắng nghe khi ViewModel bị hủy
+    override fun onCleared() {
+        super.onCleared()
+        profileListener?.remove()
     }
+
+
+    // HÀM MỚI: SỬ DỤNG onSnapshot ĐỂ CẬP NHẬT REALTIME
+    fun startRealtimeProfileListener() {
+        val user = firebaseAuth.currentUser ?: return
+        val uid = user.uid
+
+        // Dừng lắng nghe cũ trước khi tạo mới
+        profileListener?.remove()
+
+        // Bắt đầu lắng nghe document của người dùng
+        profileListener = firestore.collection("users").document(uid)
+            .addSnapshotListener { snapshot, e ->
+                if (e != null) {
+                    _uiState.update { it.copy(errorMessage = "Lỗi lắng nghe dữ liệu: ${e.message}") }
+                    return@addSnapshotListener
+                }
+
+                // Lấy thông tin cơ bản từ FirebaseAuth (Auth không cần realtime)
+                val authUser = firebaseAuth.currentUser
+
+                if (snapshot != null && snapshot.exists()) {
+                    val base64String = snapshot.getString("profilePictureBase64")
+
+                    // CẬP NHẬT UI STATE BẤT CỨ KHI NÀO DỮ LIỆU THAY ĐỔI
+                    _uiState.update {
+                        it.copy(
+                            displayName = authUser?.displayName ?: it.displayName,
+                            email = authUser?.email ?: it.email,
+                            phoneNumber = authUser?.phoneNumber ?: it.phoneNumber,
+                            photoUrl = base64String, // <--- Cập nhật Realtime
+                            isLoading = false
+                        )
+                    }
+                } else {
+                    // Trường hợp document chưa tồn tại, chỉ lấy dữ liệu từ Auth
+                    _uiState.update {
+                        it.copy(
+                            displayName = authUser?.displayName ?: it.displayName,
+                            email = authUser?.email ?: it.email,
+                            phoneNumber = authUser?.phoneNumber ?: it.phoneNumber,
+                            photoUrl = null,
+                            isLoading = false
+                        )
+                    }
+                }
+            }
+    }
+
+    // Hàm loadCurrentUser() chỉ cần gọi lại listener
+    fun loadCurrentUser() {
+        startRealtimeProfileListener()
+    }
+
+
+    // --- LỚP TRỢ GIÚP CHUYỂN ĐỔI URI SANG BASE64 ---
+    private fun getBase64FromUri(uri: Uri): String? = try {
+        val inputStream: InputStream? = firestore.app.applicationContext.contentResolver.openInputStream(uri)
+        val bytes = inputStream?.readBytes()
+        inputStream?.close()
+        if (bytes != null) Base64.encodeToString(bytes, Base64.DEFAULT) else null
+    } catch (e: Exception) {
+        null
+    }
+    // --------------------------------------------------
 
     fun onProfilePictureChanged(uri: Uri) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             try {
                 val user = firebaseAuth.currentUser ?: throw IllegalStateException("User not logged in")
-                // 1. Lấy URL ảnh cũ để xóa sau khi tải lên thành công (nếu có)
-                val oldPhotoUrl = uiState.value.photoUrl
+                val uid = user.uid
 
-                // 2. Tạo tên file duy nhất cho ảnh mới
-                val fileName = "${user.uid}_${System.currentTimeMillis()}.jpg"
-                val newStorageRef = firebaseStorage.reference.child("profile_pictures/$fileName")
+                // 1. Chuyển Uri thành chuỗi Base64 trong background thread
+                val base64String = withContext(Dispatchers.IO) {
+                    getBase64FromUri(uri)
+                }
 
-                // 3. Tải ảnh mới lên
-                newStorageRef.putFile(uri).await()
-                val downloadUrl = newStorageRef.downloadUrl.await()
+                if (base64String.isNullOrEmpty()) {
+                    throw Exception("Không thể chuyển ảnh sang định dạng Base64 hoặc ảnh quá lớn.")
+                }
 
-                // 4. Cập nhật profile người dùng với URL mới
-                val profileUpdates = UserProfileChangeRequest.Builder()
-                    .setPhotoUri(downloadUrl)
-                    .build()
-                user.updateProfile(profileUpdates).await()
+                // 2. Lưu chuỗi Base64 vào Firestore (KHÔNG CẦN CẬP NHẬT _uiState.photoUrl THỦ CÔNG)
+                val userDocRef = firestore.collection("users").document(uid)
+                val data = hashMapOf("profilePictureBase64" to base64String)
 
-                // 5. Cập nhật UI state với thông tin mới
+                userDocRef.set(data, SetOptions.merge()).await() // Thao tác này sẽ kích hoạt listener!
+
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        photoUrl = downloadUrl.toString(),
+                        // photoUrl sẽ được cập nhật bởi listener, không cần gán ở đây
                         successMessage = "Cập nhật ảnh đại diện thành công!"
                     )
-                }
-
-                // 6. Xóa ảnh cũ đi (bước này không bắt buộc nhưng nên có để tiết kiệm dung lượng)
-                if (!oldPhotoUrl.isNullOrEmpty()) {
-                    try {
-                        val oldStorageRef = firebaseStorage.getReferenceFromUrl(oldPhotoUrl)
-                        oldStorageRef.delete().await()
-                    } catch (e: Exception) {
-                        // Bỏ qua nếu không xóa được ảnh cũ, vì ảnh mới đã được cập nhật thành công
-                        println("Failed to delete old profile picture: ${e.message}")
-                    }
                 }
 
             } catch (e: Exception) {

@@ -18,33 +18,46 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.OffsetMapping
+import androidx.compose.ui.text.input.TransformedText
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.savingmoney.data.model.Category
 import com.example.savingmoney.data.model.TransactionType
 import com.example.savingmoney.ui.navigation.Destinations
 import com.example.savingmoney.utils.NotificationUtils
 import kotlinx.coroutines.launch
+import java.text.DecimalFormat
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -61,6 +74,7 @@ fun AddTransactionScreen(
     var showCategorySheet by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
     val scope = rememberCoroutineScope()
+    val scrollState = rememberScrollState()
 
     // Lắng nghe hiệu ứng thông báo từ ViewModel
     LaunchedEffect(Unit) {
@@ -73,7 +87,6 @@ fun AddTransactionScreen(
 
     LaunchedEffect(uiState.transactionSaved) {
         if (uiState.transactionSaved) {
-            // Navigate sang màn hình Success
             val txId = uiState.savedTransactionId
             if (txId != null) {
                 // Reset flag trước khi navigate
@@ -83,8 +96,7 @@ fun AddTransactionScreen(
         }
     }
 
-    uiState.error?.let {
-        val errorMessage = it
+    uiState.error?.let { errorMessage ->
         LaunchedEffect(errorMessage) {
             Toast.makeText(context, errorMessage, Toast.LENGTH_LONG).show()
             viewModel.dismissError()
@@ -161,7 +173,8 @@ fun AddTransactionScreen(
                     Button(
                         onClick = viewModel::saveTransaction,
                         enabled = !uiState.isSaving,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier
+                            .fillMaxWidth()
                             .shadow(8.dp, RoundedCornerShape(16.dp)),
                         shape = RoundedCornerShape(16.dp),
                         colors = ButtonDefaults.buttonColors(
@@ -186,7 +199,8 @@ fun AddTransactionScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
-                    .padding(horizontal = 20.dp),
+                    .padding(horizontal = 20.dp)
+                    .verticalScroll(scrollState),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Spacer(modifier = Modifier.height(8.dp))
@@ -198,30 +212,33 @@ fun AddTransactionScreen(
                     SegmentedButton(
                         selected = uiState.selectedType == TransactionType.EXPENSE,
                         onClick = { viewModel.setType(TransactionType.EXPENSE) },
-                        shape = RoundedCornerShape(topStart = 20.dp, bottomStart = 20.dp),
+                        shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
                         colors = SegmentedButtonDefaults.colors(
                             activeContainerColor = Color(0xFFFF5252),
                             activeContentColor = Color.White,
                             inactiveContainerColor = Color.White
-                        )
+                        ),
+                        icon = { SegmentedButtonDefaults.Icon(uiState.selectedType == TransactionType.EXPENSE) }
                     ) { Text("Chi Tiêu") }
 
                     SegmentedButton(
                         selected = uiState.selectedType == TransactionType.INCOME,
                         onClick = { viewModel.setType(TransactionType.INCOME) },
-                        shape = RoundedCornerShape(topEnd = 20.dp, bottomEnd = 20.dp),
+                        shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
                         colors = SegmentedButtonDefaults.colors(
                             activeContainerColor = Color(0xFF00FFA3),
-                            activeContentColor = Color(0xFF003B5C), // Màu chữ đậm trên nền sáng
+                            activeContentColor = Color(0xFF003B5C),
                             inactiveContainerColor = Color.White
-                        )
+                        ),
+                        icon = { SegmentedButtonDefaults.Icon(uiState.selectedType == TransactionType.INCOME) }
                     ) { Text("Thu Nhập") }
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
 
                 // Main Card Input
-                Card(modifier = Modifier.fillMaxWidth(),
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(24.dp),
                     colors = CardDefaults.cardColors(containerColor = Color.White),
                     elevation = CardDefaults.cardElevation(4.dp)
@@ -236,32 +253,24 @@ fun AddTransactionScreen(
                             color = Color.Gray
                         )
 
-                        OutlinedTextField(
+                        val currencyColor = if (uiState.selectedType == TransactionType.EXPENSE) Color(0xFFFF5252) else Color(0xFF00C853)
+
+                        AutoResizingCurrencyField(
                             value = uiState.amountInput,
-                            onValueChange = viewModel::setAmount,
-                            textStyle = MaterialTheme.typography.displayMedium.copy(
-                                textAlign = TextAlign.Center,
-                                fontWeight = FontWeight.Bold,
-                                color = if (uiState.selectedType == TransactionType.EXPENSE) Color(0xFFFF5252) else Color(0xFF00C853)
-                            ),
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = Color.Transparent,
-                                unfocusedBorderColor = Color.Transparent
-                            ),
-                            placeholder = {
-                                Text(
-                                    "0",
-                                    modifier = Modifier.fillMaxWidth(),
-                                    textAlign = TextAlign.Center,
-                                    style = MaterialTheme.typography.displayMedium,
-                                    color = Color.LightGray
-                                )
-                            }
+                            onValueChange = { viewModel.setAmount(it.take(15).filter { char -> char.isDigit() }) },
+                            textStyle = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Bold),
+                            color = currencyColor,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp)
                         )
 
-                        Divider(modifier = Modifier.padding(vertical = 16.dp).fillMaxWidth(0.8f), color = Color.LightGray.copy(alpha = 0.3f))
+                        HorizontalDivider(
+                            modifier = Modifier
+                                .padding(vertical = 16.dp)
+                                .fillMaxWidth(0.8f),
+                            color = Color.LightGray.copy(alpha = 0.3f)
+                        )
 
                         InfoRow(
                             icon = uiState.selectedCategory?.getIcon(),
@@ -274,7 +283,8 @@ fun AddTransactionScreen(
                         Spacer(modifier = Modifier.height(12.dp))
 
                         InfoRow(
-                            icon = Icons.Default.DateRange,iconColor = Color(0xFF005B96),
+                            icon = Icons.Default.DateRange,
+                            iconColor = Color(0xFF005B96),
                             text = formatDate(uiState.selectedDate),
                             onClick = { showDatePicker = true }
                         )
@@ -301,6 +311,103 @@ fun AddTransactionScreen(
         }
     }
 }
+
+@Composable
+fun AutoResizingCurrencyField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    textStyle: TextStyle,
+    color: Color
+) {
+    var scaledTextStyle by remember { mutableStateOf(textStyle) }
+
+    // Reset text size when input is cleared
+    LaunchedEffect(value.isEmpty()) {
+        if (value.isEmpty()) {
+            scaledTextStyle = textStyle
+        }
+    }
+
+    BasicTextField(
+        value = value,
+        onValueChange = onValueChange,
+        textStyle = scaledTextStyle.copy(
+            textAlign = TextAlign.Center,
+            color = color
+        ),
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+        cursorBrush = SolidColor(color),
+        visualTransformation = CurrencyVisualTransformation(),
+        modifier = modifier,
+        onTextLayout = { textLayoutResult ->
+            // Shrink font size if text overflows
+            if (textLayoutResult.hasVisualOverflow) {
+                if (scaledTextStyle.fontSize > 12.sp) {
+                    scaledTextStyle = scaledTextStyle.copy(fontSize = scaledTextStyle.fontSize * 0.95f)
+                }
+            }
+        },
+        decorationBox = { innerTextField ->
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                // Show placeholder if value is empty
+                if (value.isEmpty()) {
+                    Text(
+                        text = "0 ₫",
+                        style = textStyle.copy(
+                            textAlign = TextAlign.Center,
+                            color = Color.LightGray
+                        )
+                    )
+                }
+                // The actual text field
+                innerTextField()
+            }
+        }
+    )
+}
+
+
+/**
+ * VisualTransformation để định dạng số tiền và xử lý vị trí con trỏ chính xác.
+ */
+class CurrencyVisualTransformation(private val currencySymbol: String = "₫") : VisualTransformation {
+    private val formatter = DecimalFormat("#,##0")
+
+    override fun filter(text: AnnotatedString): TransformedText {
+        val cleanString = text.text.filter { it.isDigit() }
+
+        if (cleanString.isEmpty()) {
+            // Trả về chuỗi rỗng để decorationBox hiển thị placeholder
+            return TransformedText(AnnotatedString(""), OffsetMapping.Identity)
+        }
+
+        val number = cleanString.toLongOrNull() ?: 0L
+        val formattedNumber = formatter.format(number)
+        val annotatedString = AnnotatedString("$formattedNumber $currencySymbol")
+
+        val offsetMapping = object : OffsetMapping {
+            override fun originalToTransformed(offset: Int): Int {
+                val originalText = cleanString.take(offset)
+                if (originalText.isEmpty()) return 0
+                val formattedOriginalText = formatter.format(originalText.toLongOrNull() ?: 0L)
+                return formattedOriginalText.length
+            }
+
+            override fun transformedToOriginal(offset: Int): Int {
+                return annotatedString.text
+                    .substring(0, offset)
+                    .count { it.isDigit() }
+            }
+        }
+
+        return TransformedText(annotatedString, offsetMapping)
+    }
+}
+
 
 @Composable
 fun CategorySelectionSheet(categories: List<Category>, onCategorySelected: (Category) -> Unit) {
@@ -335,7 +442,8 @@ fun CategorySelectionSheet(categories: List<Category>, onCategorySelected: (Cate
                     }
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(category.name, textAlign = TextAlign.Center, style = MaterialTheme.typography.bodyMedium)
-                }}
+                }
+            }
         }
     }
 }
@@ -372,7 +480,9 @@ fun InfoRow(
                     modifier = Modifier.size(24.dp)
                 )
             } else {
-                Box(modifier = Modifier.size(24.dp).background(Color.LightGray, CircleShape))
+                Box(modifier = Modifier
+                    .size(24.dp)
+                    .background(Color.LightGray, CircleShape))
             }
         }
         Spacer(modifier = Modifier.width(16.dp))

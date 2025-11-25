@@ -14,15 +14,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
@@ -30,13 +27,12 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.savingmoney.data.model.Category
 import com.example.savingmoney.data.model.Plan
 import com.example.savingmoney.data.model.TransactionType
 import com.example.savingmoney.ui.components.BottomNavigationBar
-import com.example.savingmoney.ui.navigation.Destinations
+import com.example.savingmoney.ui.home.AutoResizeText
 import com.example.savingmoney.utils.FormatUtils
 
 @Composable
@@ -54,7 +50,6 @@ fun PlanningListScreen(
     val columnState = rememberLazyListState()
 
     // Animation state for pie chart
-    var animationPlayed by remember { mutableStateOf(false) }
     val animateRotation = remember { Animatable(0f) }
 
     LaunchedEffect(key1 = true) {
@@ -62,7 +57,6 @@ fun PlanningListScreen(
             targetValue = 1f,
             animationSpec = tween(durationMillis = 1000, delayMillis = 300)
         )
-        animationPlayed = true
     }
 
     Box(
@@ -150,33 +144,37 @@ fun OverviewCard(income: Double, expense: Double) {
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(6.dp)
     ) {
-        Column(modifier = Modifier.padding(20.dp)) {
+        Column(
+            modifier = Modifier.padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp) // Giảm khoảng cách giữa các item
+        ) {
             Text(
                 "Tổng Quan Tháng",
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = Color(0xFF003B5C)
+                color = Color(0xFF003B5C),
+                modifier = Modifier.padding(bottom = 4.dp) // Thêm padding dưới tiêu đề
             )
-            Spacer(modifier = Modifier.height(16.dp))
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                OverviewItem(label = "Thu nhập", amount = income, color = Color(0xFF2E7D32))
-                OverviewItem(label = "Chi tiêu", amount = expense, color = Color(0xFFC62828))
-                OverviewItem(label = "Còn lại", amount = netBalance, color = netColor)
-            }
+            OverviewItem(label = "Thu nhập", amount = income, color = Color(0xFF2E7D32))
+            HorizontalDivider(color = Color.LightGray.copy(alpha = 0.4f), modifier = Modifier.padding(horizontal = 8.dp))
+            OverviewItem(label = "Chi tiêu", amount = expense, color = Color(0xFFC62828))
+            HorizontalDivider(color = Color.LightGray.copy(alpha = 0.4f), modifier = Modifier.padding(horizontal = 8.dp))
+            OverviewItem(label = "Còn lại", amount = netBalance, color = netColor)
         }
     }
 }
 
 @Composable
 fun OverviewItem(label: String, amount: Double, color: Color) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(label, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
-        Text(
-            FormatUtils.formatCurrency(amount),
-            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(label, style = MaterialTheme.typography.bodyLarge, color = Color.Gray)
+        AutoResizeText(
+            text = FormatUtils.formatCurrency(amount),
+            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
             color = color
         )
     }
@@ -225,7 +223,6 @@ fun SpendAnalysisCard(
                     ) {
                         Canvas(modifier = Modifier.size(140.dp)) {
                             val strokeWidth = 40f
-                            val radius = size.minDimension / 2 - strokeWidth / 2
                             var startAngle = -90f
 
                             expenseByCategory.forEach { (category, amount) ->
@@ -247,8 +244,8 @@ fun SpendAnalysisCard(
                                 style = MaterialTheme.typography.labelSmall,
                                 color = Color.Gray
                             )
-                            Text(
-                                FormatUtils.formatCurrency(totalExpense),
+                            AutoResizeText(
+                                text = FormatUtils.formatCurrency(totalExpense),
                                 style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
                                 color = Color(0xFF003B5C)
                             )
@@ -453,16 +450,16 @@ fun BudgetCard(
                 style = MaterialTheme.typography.labelSmall,
                 color = Color.Gray
             )
-            Text(
-                FormatUtils.formatCurrency(plan.usedAmount),
+            AutoResizeText(
+                text = FormatUtils.formatCurrency(plan.usedAmount),
                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
                 color = if (isOverBudget) Color.Red else Color.Black
             )
 
             Spacer(modifier = Modifier.height(4.dp))
 
-            Text(
-                "/ ${FormatUtils.formatCurrency(plan.budgetAmount)}",
+            AutoResizeText(
+                text = "/ ${FormatUtils.formatCurrency(plan.budgetAmount)}",
                 style = MaterialTheme.typography.labelSmall,
                 color = Color.Gray
             )
@@ -483,8 +480,8 @@ fun BudgetCard(
             Spacer(modifier = Modifier.height(8.dp))
 
             // Status
-            Text(
-                if (isOverBudget) "Vượt quá!" else "Còn ${FormatUtils.formatCurrency(remaining)}",
+            AutoResizeText(
+                text = if (isOverBudget) "Vượt quá!" else "Còn ${FormatUtils.formatCurrency(remaining)}",
                 style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
                 color = if (isOverBudget) Color.Red else Color(0xFF00C853)
             )

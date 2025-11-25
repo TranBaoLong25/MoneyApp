@@ -9,16 +9,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.TrendingDown
-import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -29,14 +23,16 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.savingmoney.domain.model.TransactionSummary
+import com.example.savingmoney.ui.home.AutoResizeText
 import com.example.savingmoney.utils.FormatUtils
 import java.util.Calendar
 import java.util.GregorianCalendar
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -106,7 +102,7 @@ fun StatsScreen(
                         val categoryColors = remember { generateCategoryColors(summary.expenseByCategory.keys.toList()) }
 
                         Spacer(modifier = Modifier.height(16.dp))
-                        SummaryCard(summary)
+                        OverviewCard(income = summary.totalIncome, expense = summary.totalExpense)
                         Spacer(modifier = Modifier.height(24.dp))
                         CategoryAnalysisCard(summary, categoryColors, mainTextColor, iconColor)
                         Spacer(modifier = Modifier.height(24.dp))
@@ -129,113 +125,56 @@ fun StatsScreen(
 }
 
 @Composable
-fun SummaryCard(
-    summary: TransactionSummary
-) {
+fun OverviewCard(income: Double, expense: Double) {
+    val netBalance = income - expense
+    val netColor = when {
+        netBalance > 0 -> Color(0xFF2E7D32)
+        netBalance < 0 -> Color(0xFFC62828)
+        else -> Color.Gray
+    }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(28.dp),
-        elevation = CardDefaults.cardElevation(8.dp)
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(6.dp)
     ) {
-        Box(
-            modifier = Modifier
-                .background(
-                    Brush.linearGradient(
-                        colors = listOf(Color(0xFF005B96), Color(0xFF0ED2F7))
-                    )
-                )
-                .padding(24.dp)
+        Column(
+            modifier = Modifier.padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp) // Giảm khoảng cách giữa các item
         ) {
-            Column {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(36.dp)
-                            .clip(CircleShape)
-                            .background(Color.White.copy(alpha = 0.2f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            Icons.Default.AccountBalanceWallet,
-                            contentDescription = "Tổng quan",
-                            tint = Color.White,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text(
-                        "Tổng Quan Tháng",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color.White.copy(alpha = 0.9f)
-                    )
-                }
-                
-                Spacer(modifier = Modifier.height(24.dp))
-                
-                Text(
-                    text = "Số dư",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color.White.copy(alpha = 0.8f)
-                )
-                Text(
-                    text = FormatUtils.formatCurrency(summary.netBalance),
-                    style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.ExtraBold),
-                    color = Color.White
-                )
-                
-                Spacer(modifier = Modifier.height(32.dp))
-                
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    StatsInfoItem(
-                        label = "Thu nhập",
-                        amount = summary.totalIncome,
-                        icon = Icons.Default.TrendingUp,
-                        color = Color(0xFF00FFA3)
-                    )
-                    StatsInfoItem(
-                        label = "Chi tiêu",
-                        amount = summary.totalExpense,
-                        icon = Icons.Default.TrendingDown,
-                        color = Color(0xFFFF5252)
-                    )
-                }
-            }
+            Text(
+                "Tổng Quan Tháng",
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                color = Color(0xFF003B5C),
+                modifier = Modifier.padding(bottom = 4.dp) // Thêm padding dưới tiêu đề
+            )
+
+            OverviewItem(label = "Thu nhập", amount = income, color = Color(0xFF2E7D32))
+            HorizontalDivider(color = Color.LightGray.copy(alpha = 0.4f), modifier = Modifier.padding(horizontal = 8.dp))
+            OverviewItem(label = "Chi tiêu", amount = expense, color = Color(0xFFC62828))
+            HorizontalDivider(color = Color.LightGray.copy(alpha = 0.4f), modifier = Modifier.padding(horizontal = 8.dp))
+            OverviewItem(label = "Còn lại", amount = netBalance, color = netColor)
         }
     }
 }
 
 @Composable
-fun StatsInfoItem(
-    label: String,
-    amount: Double,
-    icon: ImageVector,
-    color: Color
-) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Box(
-            modifier = Modifier
-                .size(44.dp)
-                .clip(CircleShape)
-                .background(Color.White.copy(alpha = 0.15f)),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(icon, contentDescription = label, tint = color, modifier = Modifier.size(24.dp))
-        }
-        Spacer(modifier = Modifier.width(12.dp))
-        Column {
-            Text(label, style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.8f))
-            Text(
-                FormatUtils.formatCurrency(amount),
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = Color.White
-            )
-        }
+fun OverviewItem(label: String, amount: Double, color: Color) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(label, style = MaterialTheme.typography.bodyLarge, color = Color.Gray)
+        AutoResizeText(
+            text = FormatUtils.formatCurrency(amount),
+            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+            color = color
+        )
     }
 }
+
 
 @Composable
 fun CategoryAnalysisCard(
@@ -264,16 +203,20 @@ fun CategoryAnalysisCard(
                 Spacer(modifier = Modifier.width(12.dp))
                 Text("Phân Tích Chi Tiêu", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = textColor)
             }
-            Spacer(Modifier.height(20.dp))
-            if (summary.expenseByCategory.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(20.dp))
+            if (summary.expenseByCategory.any { it.value > 0 }) {
                 Row(
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 200.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     CategoryBarChart(
                         expenseByCategory = summary.expenseByCategory,
                         categoryColors = categoryColors,
-                        modifier = Modifier.weight(0.4f).height(180.dp)
+                        modifier = Modifier
+                            .weight(0.4f)
+                            .fillMaxHeight()
                     )
                     Spacer(modifier = Modifier.width(20.dp))
                     CategoryLegend(
@@ -287,7 +230,9 @@ fun CategoryAnalysisCard(
             } else {
                 Text(
                     "Chưa có giao dịch chi tiêu nào.",
-                    modifier = Modifier.padding(vertical = 24.dp).align(Alignment.CenterHorizontally),
+                    modifier = Modifier
+                        .padding(vertical = 24.dp)
+                        .align(Alignment.CenterHorizontally),
                     color = Color.Gray
                 )
             }
@@ -321,13 +266,15 @@ fun DailyHistoryCard(
                 Spacer(modifier = Modifier.width(12.dp))
                 Text("Biểu Đồ Ngày", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = textColor)
             }
-            Spacer(Modifier.height(16.dp))
-            if (summary.dailyExpenses.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(16.dp))
+            if (summary.dailyExpenses.any { it.value > 0 }) {
                 DailyColumnChart(dailyExpenses = summary.dailyExpenses, barColor = iconColor)
             } else {
                 Text(
                     "Chưa có dữ liệu chi tiêu theo ngày.",
-                    modifier = Modifier.padding(vertical = 24.dp).align(Alignment.CenterHorizontally),
+                    modifier = Modifier
+                        .padding(vertical = 24.dp)
+                        .align(Alignment.CenterHorizontally),
                     color = Color.Gray
                 )
             }
@@ -351,39 +298,50 @@ fun CategoryBarChart(
     categoryColors: Map<String, Color>,
     modifier: Modifier = Modifier
 ) {
-    val maxValue = remember { expenseByCategory.values.maxOrNull() ?: 1.0 }
+    val validEntries = remember(expenseByCategory) {
+        expenseByCategory.entries
+            .filter { it.value > 0 }
+            .sortedByDescending { it.value }
+    }
+    val maxValue = remember(validEntries) {
+        validEntries.firstOrNull()?.value?.toFloat() ?: 1f
+    }
 
-    Canvas(modifier = modifier) {
-        val barCount = expenseByCategory.size
-        if (barCount == 0) return@Canvas
+    Box(modifier = modifier) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            if (size.width <= 0 || size.height <= 0) {
+                return@Canvas
+            }
 
-        // Use available height for bars
-        val availableHeight = size.height
-        val availableWidth = size.width
+            val barCount = validEntries.size
+            if (barCount == 0) return@Canvas
 
-        val barWidth = availableWidth / (barCount + (barCount -1) * 0.5f) // Approximation for spacing
-        val spaceBetweenBars = barWidth * 0.5f
+            val availableHeight = size.height
+            val availableWidth = size.width
 
-        var currentX = 0f
+            val spacingRatio = 0.2f
+            val totalBarWidth = availableWidth * (1 - spacingRatio)
+            val barWidth = totalBarWidth / barCount
+            val spaceWidth = (availableWidth * spacingRatio) / barCount
 
-        // Sắp xếp để vẽ từ cao đến thấp hoặc ngược lại, tùy ý. Ở đây vẽ theo thứ tự danh sách đã sort
-        val sortedEntries = expenseByCategory.entries.sortedByDescending { it.value }
+            val minBarHeight = 1.dp.toPx()
 
-        // Recalculate width to fit perfectly if needed or keep simple
-        val totalGap = (sortedEntries.size - 1) * spaceBetweenBars
-        val calculatedBarWidth = (availableWidth - totalGap) / sortedEntries.size
+            validEntries.forEachIndexed { index, (category, expense) ->
+                val barHeight = (expense.toFloat() / maxValue) * availableHeight
+                val actualBarHeight = barHeight.coerceAtLeast(minBarHeight)
+                val color = categoryColors[category] ?: Color.Gray
 
-        sortedEntries.forEach { (category, expense) ->
-            val barHeight = (expense.toFloat() / maxValue.toFloat()) * availableHeight
-            val color = categoryColors[category] ?: Color.Gray
+                val left = index * (barWidth + spaceWidth) + (spaceWidth / 2f)
 
-            drawRoundRect(
-                color = color,
-                topLeft = Offset(currentX, availableHeight - barHeight),
-                size = Size(calculatedBarWidth, barHeight),
-                cornerRadius = CornerRadius(6f, 6f)
-            )
-            currentX += (calculatedBarWidth + spaceBetweenBars)
+                if (barWidth > 0) {
+                    drawRoundRect(
+                        color = color,
+                        topLeft = Offset(left, availableHeight - actualBarHeight),
+                        size = Size(barWidth, actualBarHeight),
+                        cornerRadius = CornerRadius(4f, 4f)
+                    )
+                }
+            }
         }
     }
 }
@@ -397,31 +355,51 @@ fun CategoryLegend(
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        expenseByCategory.entries.sortedByDescending { it.value }.take(5).forEach { (category, expense) ->
+        val sortedEntries = remember(expenseByCategory) {
+            expenseByCategory.entries.filter { it.value > 0 }.sortedByDescending { it.value }
+        }
+
+        sortedEntries.take(5).forEach { (category, expense) ->
             val percentage = if (totalExpense > 0) (expense / totalExpense).toFloat() else 0f
             val color = categoryColors[category] ?: Color.Gray
 
+            val percentageText = when {
+                percentage * 100 < 1f && percentage > 0f -> "< 1%"
+                else -> String.format(Locale.getDefault(), "%.0f%%", percentage * 100)
+            }
+
             Column {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f, fill = false)) {
+                        Box(modifier = Modifier
+                            .size(8.dp)
+                            .background(color, CircleShape))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            category,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Medium,
+                            color = textColor,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
                     Text(
-                        category,
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Medium,
-                        color = textColor
-                    )
-                    Text(
-                        "${String.format("%.0f", percentage * 100)}%",
+                        text = percentageText,
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color.Gray,
                         fontWeight = FontWeight.Bold
                     )
                 }
-                Spacer(modifier = Modifier.height(6.dp))
+                Spacer(modifier = Modifier.height(4.dp))
                 LinearProgressIndicator(
                     progress = { percentage },
-                    modifier = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(5.dp)
+                        .clip(RoundedCornerShape(3.dp)),
                     color = color,
-                    trackColor = Color(0xFFF0F0F0),
+                    trackColor = color.copy(alpha = 0.2f),
                 )
             }
         }
@@ -434,33 +412,45 @@ fun DailyColumnChart(
     barColor: Color,
     modifier: Modifier = Modifier
 ) {
-    val maxValue = remember { dailyExpenses.values.maxOrNull() ?: 1.0 }
+    val validExpenses = remember(dailyExpenses) {
+        dailyExpenses.filter { it.value > 0 }
+    }
+    val maxValue = remember(validExpenses) {
+        validExpenses.values.maxOrNull()?.toFloat() ?: 1f
+    }
     val daysInMonth = remember {
         GregorianCalendar.getInstance().getActualMaximum(Calendar.DAY_OF_MONTH)
     }
-    
-    // Use LocalDensity to convert sp to px for paint text size
+
     val density = androidx.compose.ui.platform.LocalDensity.current
     val textPaint = remember(density) {
         android.graphics.Paint().apply {
-            color = android.graphics.Color.parseColor("#9E9E9E")
+            color = Color(0xFF9E9E9E).toArgb()
             textAlign = android.graphics.Paint.Align.CENTER
-            textSize = with(density) { 10.dp.toPx() } // Responsive text size
+            textSize = with(density) { 10.dp.toPx() }
             isAntiAlias = true
         }
     }
 
     Box(
-        modifier = modifier.fillMaxWidth().height(180.dp).padding(top = 10.dp)
+        modifier = modifier
+            .fillMaxWidth()
+            .height(180.dp)
+            .padding(top = 10.dp)
     ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
+            if (size.width <= 0 || size.height <= 0) {
+                return@Canvas
+            }
+
             val xAxisLabelAreaHeight = 30.dp.toPx()
             val chartAreaHeight = size.height - xAxisLabelAreaHeight
+            if (chartAreaHeight <= 0) return@Canvas
+
             val width = size.width
 
-            // Draw Grid Lines
             val gridLineCount = 4
-            for (i in 0..gridLineCount) {
+            (0..gridLineCount).forEach { i ->
                 val y = chartAreaHeight * (i.toFloat() / gridLineCount)
                 drawLine(
                     color = Color(0xFFEEEEEE),
@@ -470,30 +460,31 @@ fun DailyColumnChart(
                 )
             }
 
-            // Draw Bars
-            val barWidth = (width / daysInMonth) * 0.6f
-            val stepX = width / daysInMonth
+            val totalSlots = daysInMonth
+            val spacingRatio = 0.4f
+            val slotWidth = width / totalSlots
+            val barWidth = slotWidth * (1 - spacingRatio)
 
-            dailyExpenses.forEach { (day, expense) ->
-                if (expense > 0 && day <= daysInMonth) {
-                    val barHeight = (expense.toFloat() / maxValue.toFloat()) * chartAreaHeight
-                    // Ensure bar has min height so it's visible
-                    val actualBarHeight = if (barHeight < 2.dp.toPx()) 2.dp.toPx() else barHeight
+            validExpenses.forEach { (day, expense) ->
+                if (day in 1..daysInMonth) {
+                    val barHeight = (expense.toFloat() / maxValue) * chartAreaHeight
+                    val actualBarHeight = barHeight.coerceAtLeast(1.dp.toPx())
 
-                    val centerX = (day - 1) * stepX + stepX / 2
-                    val left = centerX - barWidth / 2
+                    val left = (day - 1) * slotWidth + (slotWidth - barWidth) / 2f
 
-                    drawRoundRect(
-                        color = barColor.copy(alpha = 0.85f),
-                        topLeft = Offset(left, chartAreaHeight - actualBarHeight),
-                        size = Size(barWidth, actualBarHeight),
-                        cornerRadius = CornerRadius(4f, 4f)
-                    )
+                    if (barWidth > 0) {
+                        drawRoundRect(
+                            color = barColor.copy(alpha = 0.85f),
+                            topLeft = Offset(left, chartAreaHeight - actualBarHeight),
+                            size = Size(barWidth, actualBarHeight),
+                            cornerRadius = CornerRadius(4f, 4f)
+                        )
+                    }
 
-                    if (day == 1 || day % 5 == 0) {
+                    if (day == 1 || day % 5 == 0 || daysInMonth <= 15) {
                         drawContext.canvas.nativeCanvas.drawText(
                             day.toString(),
-                            centerX,
+                            left + barWidth / 2,
                             chartAreaHeight + xAxisLabelAreaHeight - 5.dp.toPx(),
                             textPaint
                         )

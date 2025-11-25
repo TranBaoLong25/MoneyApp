@@ -1,41 +1,41 @@
 {
   "project_info": {
-    "project_number": "714995779967",
-    "project_id": "savingmoneyapp-8b321",
-    "storage_bucket": "savingmoneyapp-8b321.firebasestorage.app"
+    "project_number": "450782331714",
+    "project_id": "moneyapp-895d0",
+    "storage_bucket": "moneyapp-895d0.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:714995779967:android:3a1721adeaa75ca599724a",
+        "mobilesdk_app_id": "1:450782331714:android:96dacd8e6b407c61f13edb",
         "android_client_info": {
           "package_name": "com.example.savingmoney"
         }
       },
       "oauth_client": [
         {
-          "client_id": "714995779967-ldfcl8k8sqtaljhqfkckm078bfncnqk1.apps.googleusercontent.com",
+          "client_id": "450782331714-kp16tnfu7q5hsqkqh2p40sd954qov01g.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.example.savingmoney",
-            "certificate_hash": "7bc8bcb3be1c4a6df685597c2789a677eea7500c"
+            "certificate_hash": "57c0e1d6b920b0aa8464743a77fb3602829264fc"
           }
         },
         {
-          "client_id": "714995779967-1bvmsavo376e1u5sq1q4u8rg2rt68as1.apps.googleusercontent.com",
+          "client_id": "450782331714-rjqpi2u6pb1m1gaanv2e3qldiaet3d2d.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyDlgRkmrgekeotRbAw2iIhMU1y-byFSoUA"
+          "current_key": "AIzaSyDZIcgjEYu2TJ4Xw0-dxxlqdiaPsOn1ea0"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "714995779967-1bvmsavo376e1u5sq1q4u8rg2rt68as1.apps.googleusercontent.com",
+              "client_id": "450782331714-rjqpi2u6pb1m1gaanv2e3qldiaet3d2d.apps.googleusercontent.com",
               "client_type": 3
             }
           ]

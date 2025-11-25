@@ -9,12 +9,15 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.TrendingDown
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -22,9 +25,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.isUnspecified
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.savingmoney.data.model.Category
@@ -178,128 +183,109 @@ fun BalanceCard(balance: Double, income: Double, expense: Double) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(28.dp),
-        elevation = CardDefaults.cardElevation(10.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        elevation = CardDefaults.cardElevation(8.dp)
     ) {
-        Row(
+        Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(IntrinsicSize.Min)
+                .background(
+                    Brush.linearGradient(
+                        colors = listOf(Color(0xFF005B96), Color(0xFF0ED2F7))
+                    )
+                )
+                .padding(horizontal = 20.dp, vertical = 16.dp)
         ) {
-            Box(
-                modifier = Modifier
-                    .weight(0.55f)
-                    .fillMaxHeight()
-                    .background(
-                        Brush.linearGradient(
-                            colors = listOf(Color(0xFF005B96), Color(0xFF0ED2F7)),
-                            start = Offset(0f, 0f),
-                            end = Offset(1000f, 1000f)
+            Column {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(32.dp)
+                            .clip(CircleShape)
+                            .background(Color.White.copy(alpha = 0.2f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.Default.AccountBalanceWallet,
+                            contentDescription = "Tổng quan",
+                            tint = Color.White,
+                            modifier = Modifier.size(18.dp)
                         )
-                    )
-            ) {
-                Canvas(modifier = Modifier.fillMaxSize()) {
-                    val path = Path()
-                    path.moveTo(0f, size.height)
-                    path.lineTo(size.width, size.height)
-                    path.lineTo(size.width, size.height * 0.5f)
-                    path.cubicTo(
-                        size.width * 0.7f, size.height * 0.8f,
-                        size.width * 0.3f, size.height * 0.4f,
-                        0f, size.height * 0.6f
-                    )
-                    path.close()
-                    drawPath(path, Color.White.copy(alpha = 0.1f), style = Fill)
-                }
-
-                Column(
-                    modifier = Modifier
-                        .padding(20.dp)
-                        .fillMaxHeight(),
-                    verticalArrangement = Arrangement.Center
-                ) {
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
                     Text(
-                        text = "Tổng số dư",
-                        style = MaterialTheme.typography.labelMedium,
+                        "Tổng Quan Hôm Nay",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
                         color = Color.White.copy(alpha = 0.9f)
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = formatCurrency(balance),
-                        style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold),
-                        color = Color.White
-                    )
-                    // Đã bỏ Surface hiển thị "VND"
                 }
-            }
 
-            Column(
-                modifier = Modifier
-                    .weight(0.45f)
-                    .fillMaxHeight()
-                    .background(Color(0xFFF8F9FA))
-                    .padding(horizontal = 16.dp, vertical = 16.dp),
-                verticalArrangement = Arrangement.SpaceEvenly
-            ) {
-                StatRow(
-                    label = "Thu nhập",
-                    amount = income,
-                    icon = Icons.Default.ArrowUpward,
-                    iconTint = Color(0xFF2E7D32),
-                    bgTint = Color(0xFFE8F5E9)
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    text = "Số dư",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.White.copy(alpha = 0.8f)
+                )
+                AutoResizeText(
+                    text = formatCurrency(balance),
+                    style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+                    color = Color.White,
+                    modifier = Modifier.fillMaxWidth()
                 )
 
-                Divider(color = Color.LightGray.copy(alpha = 0.3f))
+                Spacer(modifier = Modifier.height(20.dp))
 
-                StatRow(
-                    label = "Chi tiêu",
-                    amount = expense,
-                    icon = Icons.Default.ArrowDownward,
-                    iconTint = Color(0xFFC62828),
-                    bgTint = Color(0xFFFFEBEE)
-                )
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    StatsInfoItem(
+                        label = "Thu nhập",
+                        amount = income,
+                        icon = Icons.AutoMirrored.Filled.TrendingUp,
+                        color = Color(0xFF00FFA3)
+                    )
+                    HorizontalDivider(color = Color.White.copy(alpha = 0.2f))
+                    StatsInfoItem(
+                        label = "Chi tiêu",
+                        amount = expense,
+                        icon = Icons.AutoMirrored.Filled.TrendingDown,
+                        color = Color(0xFFFF5252)
+                    )
+                }
             }
         }
     }
 }
 
-
 @Composable
-fun StatRow(
-    label: String, 
-    amount: Double, 
-    icon: ImageVector, 
-    iconTint: Color, 
-    bgTint: Color
+fun StatsInfoItem(
+    label: String,
+    amount: Double,
+    icon: ImageVector,
+    color: Color
 ) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth()
+    ) {
         Box(
             modifier = Modifier
                 .size(32.dp)
                 .clip(CircleShape)
-                .background(bgTint),
+                .background(Color.White.copy(alpha = 0.15f)),
             contentAlignment = Alignment.Center
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = iconTint,
-                modifier = Modifier.size(18.dp)
-            )
+            Icon(icon, contentDescription = label, tint = color, modifier = Modifier.size(20.dp))
         }
-        Spacer(modifier = Modifier.width(10.dp))
-        Column {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelSmall,
-                color = Color.Gray
-            )
-            Text(
-                text = formatCurrency(amount),
-                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                color = Color(0xFF003B5C)
-            )
-        }
+        Spacer(modifier = Modifier.width(12.dp))
+        Text(label, style = MaterialTheme.typography.bodyMedium, color = Color.White.copy(alpha = 0.9f))
+        Spacer(Modifier.weight(1f))
+        AutoResizeText(
+            text = formatCurrency(amount),
+            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+            color = Color.White
+        )
     }
 }
 
@@ -310,7 +296,6 @@ fun StatsSection(
     onViewAll: () -> Unit
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
-        // Tiêu đề nằm ngoài Box
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -330,7 +315,6 @@ fun StatsSection(
             }
         }
 
-        // Nội dung nằm trong Card nổi lên
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(24.dp),
@@ -343,15 +327,16 @@ fun StatsSection(
                 if (stats.isEmpty()) {
                     Text(
                         "Chưa có dữ liệu thống kê.",
-                        color = Color.Gray, 
+                        color = Color.Gray,
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.align(Alignment.CenterHorizontally).padding(vertical = 12.dp)
                     )
                 } else {
                     stats.take(3).forEachIndexed { index, stat ->
                         val category = categories.firstOrNull { it.name == stat.category }
-                        val color = category?.getColor() ?: MaterialTheme.colorScheme.primary
-                        val icon = category?.getIcon() ?: Icons.Default.Label
+                            ?: Category(name = stat.category, type = TransactionType.EXPENSE, iconName = "Label", color = "#808080")
+                        val color = category.getColor()
+                        val icon = category.getIcon()
 
                         Row(
                             modifier = Modifier
@@ -372,15 +357,14 @@ fun StatsSection(
                                 color = Color(0xFF003B5C),
                                 modifier = Modifier.weight(1f)
                             )
-                            Text(
+                            AutoResizeText(
                                 formatCurrency(stat.amount),
                                 color = color,
                                 style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
                             )
                         }
-                        // Đường kẻ mờ giữa các item (nếu cần thiết)
                         if (index < minOf(stats.size, 3) - 1) {
-                             Divider(color = Color(0xFFF5F5F5), thickness = 1.dp)
+                             HorizontalDivider(color = Color(0xFFF5F5F5), thickness = 1.dp)
                         }
                     }
                 }
@@ -391,8 +375,9 @@ fun StatsSection(
 
 @Composable
 fun RecentTransactionsSection(transactions: List<Transaction>, onViewAll: () -> Unit, categories: List<Category>) {
+    var expandedTransactionId by remember { mutableStateOf<String?>(null) }
+
     Column(modifier = Modifier.fillMaxWidth()) {
-        // Tiêu đề nằm ngoài Box
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -412,7 +397,6 @@ fun RecentTransactionsSection(transactions: List<Transaction>, onViewAll: () -> 
             }
         }
 
-        // Nội dung nằm trong Card nổi lên
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(24.dp),
@@ -434,9 +418,20 @@ fun RecentTransactionsSection(transactions: List<Transaction>, onViewAll: () -> 
                 } else {
                     val displayList = transactions.take(5)
                     displayList.forEachIndexed { index, tx ->
-                        TransactionRow(tx, categories)
+                        TransactionRow(
+                            tx = tx,
+                            categories = categories,
+                            isExpanded = expandedTransactionId == tx.id,
+                            onItemClick = { transactionId ->
+                                expandedTransactionId = if (expandedTransactionId == transactionId) {
+                                    null // Collapse if the same item is clicked again
+                                } else {
+                                    transactionId // Expand the new item
+                                }
+                            }
+                        )
                         if (index < displayList.lastIndex) {
-                            Divider(
+                            HorizontalDivider(
                                 color = Color(0xFFF5F5F5),
                                 thickness = 1.dp,
                                 modifier = Modifier.padding(horizontal = 20.dp)
@@ -450,73 +445,128 @@ fun RecentTransactionsSection(transactions: List<Transaction>, onViewAll: () -> 
 }
 
 @Composable
-fun getIconForCategory(category: String): ImageVector {
-    return when (category) {
-        "Ăn uống" -> Icons.Default.Restaurant
-        "Lương" -> Icons.Default.AccountBalanceWallet
-        "Hóa đơn" -> Icons.Default.ReceiptLong
-        "Mua sắm" -> Icons.Default.ShoppingCart
-        "Di chuyển" -> Icons.Default.Commute
-        "Giải trí" -> Icons.Default.Movie
-        "Tiền nhà" -> Icons.Default.HomeWork
-        "Tiền điện" -> Icons.Default.Bolt
-        "Tiền nước" -> Icons.Default.WaterDrop
-        "Học phí" -> Icons.Default.School
-        "Chi phí phát sinh" -> Icons.Default.AddBusiness
-        "Thưởng" -> Icons.Default.MilitaryTech
-        "Đầu tư" -> Icons.Default.TrendingUp
-        "Quà tặng" -> Icons.Default.CardGiftcard
-        else -> Icons.Default.Label
-    }
-}
-
-@Composable
-fun TransactionRow(tx: Transaction, categories: List<Category>) {
+fun TransactionRow(
+    tx: Transaction, 
+    categories: List<Category>,
+    isExpanded: Boolean,
+    onItemClick: (String) -> Unit
+) {
     val category = categories.find { it.name == tx.categoryName }
+        ?: Category(name = tx.categoryName, type = tx.type, iconName = "Label", color = "#808080")
     val isIncome = tx.type == TransactionType.INCOME
     val amountColor = if (isIncome) Color(0xFF2E7D32) else Color(0xFFD32F2F)
     val prefix = if (isIncome) "+" else "-"
     
-    val icon = category?.getIcon() ?: getIconForCategory(tx.categoryName)
-    val iconColor = category?.getColor() ?: Color.Gray
+    val icon = category.getIcon()
+    val iconColor = category.getColor()
     val backgroundColor = iconColor.copy(alpha = 0.1f)
+    val hasNote = !tx.note.isNullOrBlank()
 
-    Row(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { /* Navigate transaction detail */ }
-            .padding(horizontal = 20.dp, vertical = 14.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .clickable(enabled = hasNote) { onItemClick(tx.id) }
+            .padding(horizontal = 20.dp, vertical = 14.dp)
     ) {
-        Box(
-            modifier = Modifier
-                .size(44.dp)
-                .clip(CircleShape)
-                .background(backgroundColor),
-            contentAlignment = Alignment.Center
+        Row(
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = tx.categoryName,
-                tint = iconColor,
-                modifier = Modifier.size(22.dp)
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(CircleShape)
+                    .background(backgroundColor),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = tx.categoryName,
+                    tint = iconColor,
+                    modifier = Modifier.size(22.dp)
+                )
+            }
+
+            Spacer(Modifier.width(16.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        tx.categoryName,
+                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                        color = Color(0xFF003B5C)
+                    )
+                    if (hasNote) {
+                        Spacer(Modifier.width(8.dp))
+                        Icon(
+                            imageVector = Icons.Default.Notes,
+                            contentDescription = "Có ghi chú",
+                            tint = Color.Gray,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
+            }
+
+            AutoResizeText(
+                text = "$prefix${formatCurrency(tx.amount)}",
+                color = amountColor,
+                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
             )
         }
 
-        Spacer(Modifier.width(16.dp))
-
-        Column(modifier = Modifier.weight(1f)) {
+        // Expanded note section
+        if (isExpanded && hasNote) {
+            Spacer(modifier = Modifier.height(8.dp))
             Text(
-                tx.categoryName,
-                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-                color = Color(0xFF003B5C)
+                text = tx.note!!,
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.DarkGray,
+                modifier = Modifier.padding(start = 60.dp) // 44dp icon + 16dp spacer
             )
         }
-
-        Text(
-            "$prefix${formatCurrency(tx.amount)}",
-            color = amountColor,
-            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
-        )
     }
+}
+
+@Composable
+fun AutoResizeText(
+    text: String,
+    style: TextStyle,
+    modifier: Modifier = Modifier,
+    color: Color = style.color
+) {
+    var resizedTextStyle by remember {
+        mutableStateOf(style)
+    }
+    var shouldDraw by remember {
+        mutableStateOf(false)
+    }
+
+    val defaultFontSize = MaterialTheme.typography.bodyLarge.fontSize
+
+    Text(
+        text = text,
+        color = color,
+        modifier = modifier.drawWithContent {
+            if (shouldDraw) {
+                drawContent()
+            }
+        },
+        softWrap = false,
+        style = resizedTextStyle,
+        onTextLayout = { result ->
+            if (result.didOverflowWidth) {
+                if (style.fontSize.isUnspecified) {
+                    resizedTextStyle = resizedTextStyle.copy(
+                        fontSize = defaultFontSize
+                    )
+                } else {
+                    resizedTextStyle = resizedTextStyle.copy(
+                        fontSize = resizedTextStyle.fontSize * 0.95
+                    )
+                }
+            } else {
+                shouldDraw = true
+            }
+        }
+    )
 }

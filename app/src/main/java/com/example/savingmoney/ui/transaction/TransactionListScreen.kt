@@ -15,12 +15,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -131,6 +133,8 @@ fun FilterChips(selectedType: TransactionType?, onFilterSelected: (TransactionTy
 
 @Composable
 fun TransactionGroup(date: String, transactions: List<Transaction>, categories: List<Category>) {
+    var expandedTransactionId by remember { mutableStateOf<String?>(null) }
+
     Column {
         Text(
             text = date,
@@ -146,7 +150,18 @@ fun TransactionGroup(date: String, transactions: List<Transaction>, categories: 
         ) {
             Column {
                 transactions.forEachIndexed { index, tx ->
-                    TransactionRow(tx = tx, categories = categories)
+                    TransactionRow(
+                        tx = tx, 
+                        categories = categories,
+                        isExpanded = expandedTransactionId == tx.id,
+                        onItemClick = { transactionId ->
+                            expandedTransactionId = if (expandedTransactionId == transactionId) {
+                                null
+                            } else {
+                                transactionId
+                            }
+                        }
+                    )
                     if (index < transactions.lastIndex) {
                         HorizontalDivider(color = Color.LightGray.copy(alpha = 0.4f), modifier = Modifier.padding(horizontal = 16.dp))
                     }

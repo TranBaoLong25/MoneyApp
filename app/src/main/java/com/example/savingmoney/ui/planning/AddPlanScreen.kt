@@ -24,14 +24,20 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.OffsetMapping
+import androidx.compose.ui.text.input.TransformedText
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.savingmoney.data.model.Category
 import com.example.savingmoney.data.model.Plan
 import com.example.savingmoney.utils.FormatUtils
+import java.text.DecimalFormat
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -197,19 +203,53 @@ fun AddPlanScreen(
                 if (selectedCategory != null) {
                     OutlinedTextField(
                         value = budgetInput,
-                        onValueChange = { input ->
-                            val filtered = input.filter { it.isDigit() || it == '.' }
-                            if (filtered.count { it == '.' } <= 1) budgetInput = filtered
-                        },
+                        onValueChange = { budgetInput = it.filter { char -> char.isDigit() } },
                         label = { Text("Nhập ngân sách cho ${selectedCategory!!.name}") },
-                        placeholder = { Text("Ví dụ: 100000") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        modifier = Modifier.fillMaxWidth()
+                        placeholder = { Text("Ví dụ: 1.000.000") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.fillMaxWidth(),
+                        visualTransformation = CurrencyVisualTransformation()
                     )
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
             }
         }
+    }
+}
+
+class CurrencyVisualTransformation(private val currencySymbol: String = " ₫") : VisualTransformation {
+    private val formatter = DecimalFormat("#,###").apply {
+        this.decimalFormatSymbols = this.decimalFormatSymbols.apply {
+            groupingSeparator = '.'
+        }
+    }
+
+    override fun filter(text: AnnotatedString): TransformedText {
+        val cleanString = text.text.filter { it.isDigit() }
+        if (cleanString.isEmpty()) {
+            return TransformedText(AnnotatedString(""), OffsetMapping.Identity)
+        }
+
+        val number = cleanString.toLongOrNull() ?: 0L
+        val formattedNumber = formatter.format(number)
+        val annotatedString = AnnotatedString("$formattedNumber$currencySymbol")
+
+        val offsetMapping = object : OffsetMapping {
+            override fun originalToTransformed(offset: Int): Int {
+                val originalText = cleanString.take(offset)
+                if (originalText.isEmpty()) return 0
+                val formattedOriginalText = formatter.format(originalText.toLongOrNull() ?: 0L)
+                return formattedOriginalText.length
+            }
+
+            override fun transformedToOriginal(offset: Int): Int {
+                return annotatedString.text
+                    .substring(0, offset)
+                    .count { it.isDigit() }
+            }
+        }
+
+        return TransformedText(annotatedString, offsetMapping)
     }
 }

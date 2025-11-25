@@ -15,25 +15,28 @@ object FormatUtils {
     }
 
     fun formatCurrency(amount: Double): String {
+        // Luôn hiển thị số đầy đủ và đảm bảo ký hiệu tiền tệ không bị xuống dòng
+        return currencyFormatter.format(abs(amount)).replace("\u00A0", " ").replace(" ", "\u00A0")
+    }
+
+    fun formatCompactCurrency(amount: Double): String {
         val absAmount = abs(amount)
-        return when {
+        // Sử dụng replace để đảm bảo không xuống dòng
+        val formattedAmount = when {
             absAmount >= 1_000_000_000 -> {
-                val value = amount / 1_000_000_000
+                val value = absAmount / 1_000_000_000
                 decimalFormatter.format(value) + " TỶ"
             }
             absAmount >= 1_000_000 -> {
-                val value = amount / 1_000_000
+                val value = absAmount / 1_000_000
                 decimalFormatter.format(value) + " TRIỆU"
             }
             absAmount >= 1_000 -> {
-                val value = amount / 1_000
+                val value = absAmount / 1_000
                 decimalFormatter.format(value) + " NGHÌN"
             }
-            else -> currencyFormatter.format(amount)
+            else -> currencyFormatter.format(abs(amount))
         }
-    }
-    
-    fun formatCompactCurrency(amount: Double): String {
-        return formatCurrency(amount)
+        return formattedAmount.replace("\u00A0", " ").replace(" ", "\u00A0")
     }
 }

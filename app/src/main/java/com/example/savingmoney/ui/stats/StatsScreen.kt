@@ -31,6 +31,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.savingmoney.domain.model.TransactionSummary
 import com.example.savingmoney.ui.home.AutoResizeText
+import com.example.savingmoney.ui.settings.SettingsViewModel
+import com.example.savingmoney.ui.theme.BackgroundGradients
 import com.example.savingmoney.utils.FormatUtils
 import java.util.Calendar
 import java.util.GregorianCalendar
@@ -40,21 +42,22 @@ import java.util.Locale
 @Composable
 fun StatsScreen(
     onNavigateUp: () -> Unit,
+    settingsViewModel: SettingsViewModel = hiltViewModel(), // thêm viewModel cho gradient
+
     viewModel: StatsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val mainTextColor = Color(0xFF003B5C)
     val iconColor = Color(0xFF005B96)
-
+    val selectedBackgroundIndex by settingsViewModel.selectedBackgroundIndex.collectAsState()
+    val gradient = BackgroundGradients.getOrNull(selectedBackgroundIndex) ?: BackgroundGradients[0]
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(Color(0xFFF7F9FC), Color(0xFFB2FEFA))
-                )
-            )
-    ) {
+            .background(gradient) // dùng gradient động
+    )
+
+     {
         Scaffold(
             topBar = {
                 TopAppBar(

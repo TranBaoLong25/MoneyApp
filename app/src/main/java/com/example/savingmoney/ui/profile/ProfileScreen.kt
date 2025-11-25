@@ -59,11 +59,15 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import com.example.savingmoney.ui.settings.SettingsViewModel
+import com.example.savingmoney.ui.theme.BackgroundGradients
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
     onNavigateUp: () -> Unit,
+    settingsViewModel: SettingsViewModel = hiltViewModel(), // thêm dòng này
+
     viewModel: ProfileViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -76,7 +80,8 @@ fun ProfileScreen(
     // Colors consistent with AddTransactionScreen
     val mainTextColor = Color(0xFF003B5C)
     val iconColor = Color(0xFF005B96)
-
+    val selectedBackgroundIndex by settingsViewModel.selectedBackgroundIndex.collectAsState()
+    val gradient = BackgroundGradients.getOrNull(selectedBackgroundIndex) ?: BackgroundGradients[0]
     LaunchedEffect(uiState.successMessage, uiState.errorMessage) {
         uiState.successMessage?.let {
             Toast.makeText(context, it, Toast.LENGTH_LONG).show()
@@ -133,12 +138,8 @@ fun ProfileScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(Color(0xFFF7F9FC), Color(0xFFB2FEFA))
-                )
-            )
-    ) {
+            .background(gradient) // dùng gradient động
+    )  {
         Scaffold(
             topBar = {
                 TopAppBar(

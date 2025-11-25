@@ -1,26 +1,24 @@
 package com.example.savingmoney.ui.settings
-
+import android.content.Context
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.savingmoney.data.local.datastore.ThemePreferences
 import com.example.savingmoney.domain.usecase.GetLanguageUseCase
 import com.example.savingmoney.domain.usecase.GetNotificationsEnabledUseCase
-import com.example.savingmoney.domain.usecase.GetThemeUseCase
 import com.example.savingmoney.domain.usecase.UpdateLanguageUseCase
 import com.example.savingmoney.domain.usecase.UpdateNotificationsEnabledUseCase
-import com.example.savingmoney.domain.usecase.UpdateThemeUseCase
 import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 data class SettingsUiState(
-    val isDarkMode: Boolean = false,
+    val selectedBackgroundIndex: Int = 0,
     val currentLanguageCode: String = "vi",
     val displayName: String = "",
     val email: String = "",
@@ -33,26 +31,39 @@ sealed class SettingsEvent {
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
-    private val getThemeUseCase: GetThemeUseCase,
     private val getLanguageUseCase: GetLanguageUseCase,
-    private val updateThemeUseCase: UpdateThemeUseCase,
-    private val updateLanguageUseCase: UpdateLanguageUseCase,
     private val getNotificationsEnabledUseCase: GetNotificationsEnabledUseCase,
+    private val updateLanguageUseCase: UpdateLanguageUseCase,
     private val updateNotificationsEnabledUseCase: UpdateNotificationsEnabledUseCase,
-    private val firebaseAuth: FirebaseAuth
+    private val firebaseAuth: FirebaseAuth,
+    @ApplicationContext private val context: Context   // <-- thêm annotation này
+
+
 ) : ViewModel() {
 
     private val _settingsEventChannel = Channel<SettingsEvent>()
     val settingsEvents = _settingsEventChannel.receiveAsFlow()
 
+    private val _selectedBackgroundIndex = MutableStateFlow(0)
+    val selectedBackgroundIndex: StateFlow<Int> = _selectedBackgroundIndex.asStateFlow()
+
+    init {
+        // đọc hình nền từ DataStore khi ViewModel khởi tạo
+        viewModelScope.launch {
+            ThemePreferences.getBackgroundIndex(context).collect { index ->
+                _selectedBackgroundIndex.value = index
+            }
+        }
+    }
+
     val uiState: StateFlow<SettingsUiState> = combine(
-        getThemeUseCase(),
         getLanguageUseCase(),
-        getNotificationsEnabledUseCase()
-    ) { isDark, langCode, isNotifEnabled ->
+        getNotificationsEnabledUseCase(),
+        selectedBackgroundIndex
+    ) { langCode, isNotifEnabled, bgIndex ->
         val currentUser = firebaseAuth.currentUser
         SettingsUiState(
-            isDarkMode = isDark,
+            selectedBackgroundIndex = bgIndex,
             currentLanguageCode = langCode,
             displayName = currentUser?.displayName ?: "",
             email = currentUser?.email ?: "",
@@ -64,12 +75,15 @@ class SettingsViewModel @Inject constructor(
         initialValue = SettingsUiState()
     )
 
-    fun onDarkModeToggled(isDark: Boolean) {
-        viewModelScope.launch {
-            updateThemeUseCase(isDark)
+    fun onBackgroundSelected(index: Int) {
+        if (index in com.example.savingmoney.ui.theme.BackgroundGradients.indices) {
+            _selectedBackgroundIndex.value = index
+            viewModelScope.launch {
+                ThemePreferences.saveBackgroundIndex(context, index)
+            }
         }
     }
-    
+
     fun onNotificationsToggled(isEnabled: Boolean) {
         viewModelScope.launch {
             updateNotificationsEnabledUseCase(isEnabled)

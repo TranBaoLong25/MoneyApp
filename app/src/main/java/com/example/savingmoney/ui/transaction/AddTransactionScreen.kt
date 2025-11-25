@@ -55,6 +55,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.savingmoney.data.model.Category
 import com.example.savingmoney.data.model.TransactionType
 import com.example.savingmoney.ui.navigation.Destinations
+import com.example.savingmoney.ui.settings.SettingsViewModel
+import com.example.savingmoney.ui.theme.BackgroundGradients
 import com.example.savingmoney.utils.NotificationUtils
 import kotlinx.coroutines.launch
 import java.text.DecimalFormat
@@ -65,6 +67,8 @@ import java.util.*
 @Composable
 fun AddTransactionScreen(
     viewModel: AddTransactionViewModel = hiltViewModel(),
+    settingsViewModel: SettingsViewModel = hiltViewModel(), // thêm dòng này
+
     onNavigateUp: () -> Unit,
     onNavigate: (String) -> Unit
 ) {
@@ -75,6 +79,8 @@ fun AddTransactionScreen(
     val sheetState = rememberModalBottomSheetState()
     val scope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
+    val selectedBackgroundIndex by settingsViewModel.selectedBackgroundIndex.collectAsState()
+    val gradient = BackgroundGradients.getOrNull(selectedBackgroundIndex) ?: BackgroundGradients[0]
 
     // Lắng nghe hiệu ứng thông báo từ ViewModel
     LaunchedEffect(Unit) {
@@ -139,12 +145,8 @@ fun AddTransactionScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(Color(0xFFF7F9FC), Color(0xFFB2FEFA))
-                )
-            )
-    ) {
+            .background(gradient) // dùng gradient động
+    ){
         Scaffold(
             containerColor = Color.Transparent,
             topBar = {

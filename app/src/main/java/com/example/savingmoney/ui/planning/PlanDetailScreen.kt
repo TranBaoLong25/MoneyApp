@@ -1,4 +1,3 @@
-// ---------------- PlanDetailScreen.kt (Optimized Version) ----------------
 package com.example.savingmoney.ui.planning
 
 import android.widget.Toast
@@ -30,18 +29,24 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.savingmoney.data.model.Plan
 import com.example.savingmoney.data.model.Transaction
 import com.example.savingmoney.data.model.TransactionType
+import com.example.savingmoney.ui.settings.SettingsViewModel
+import com.example.savingmoney.ui.theme.BackgroundGradients
 import com.example.savingmoney.utils.FormatUtils
 import kotlin.math.min
 
+// ---------------------- Daily Expense calculator ----------------------
 fun getDailyExpensesForPlan(
     plan: Plan,
     transactions: List<Transaction>
 ): Map<Int, Map<Int, Double>> {
+
     val planTransactions = transactions.filter {
-        it.type == TransactionType.EXPENSE && plan.categoryBudgets.containsKey(it.categoryName)
+        it.type == TransactionType.EXPENSE &&
+                plan.categoryBudgets.containsKey(it.categoryName)
     }
 
     return planTransactions.groupBy { tx ->
@@ -57,11 +62,14 @@ fun getDailyExpensesForPlan(
     }
 }
 
+// ---------------------- Chart ----------------------
 @Composable
 fun MonthlyExpenseChart(dailyExpenses: Map<Int, Map<Int, Double>>) {
+
     val context = LocalContext.current
     val screenHeight = LocalContext.current.resources.displayMetrics.heightPixels /
             LocalContext.current.resources.displayMetrics.density
+
     val chartHeight = min(180.dp.value, screenHeight * 0.25f).dp
     val minFraction = 0.05f
 
@@ -150,14 +158,17 @@ fun MonthlyExpenseChart(dailyExpenses: Map<Int, Map<Int, Double>>) {
     }
 }
 
+// ---------------------- Main Screen ----------------------
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlanDetailScreen(
     planId: String,
     viewModel: PlanViewModel,
+    settingsViewModel: SettingsViewModel = hiltViewModel(),
     onBack: () -> Unit,
     onDeletePlan: (String) -> Unit = {}
 ) {
+
     val uiState by viewModel.uiState.collectAsState()
     val plan = uiState.plans.find { it.id == planId }
     val context = LocalContext.current
@@ -165,7 +176,12 @@ fun PlanDetailScreen(
     var isEditing by remember { mutableStateOf(false) }
     var budgetInput by remember { mutableStateOf(plan?.budgetAmount?.toString() ?: "") }
 
+    // Gradient động
+    val selectedBackgroundIndex by settingsViewModel.selectedBackgroundIndex.collectAsState()
+    val gradient = BackgroundGradients.getOrNull(selectedBackgroundIndex) ?: BackgroundGradients[0]
+
     Scaffold(
+        containerColor = Color.Transparent, // quan trọng!
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
@@ -199,26 +215,27 @@ fun PlanDetailScreen(
         },
         bottomBar = {
             if (isEditing && plan != null) {
+
                 val isValid = budgetInput.toDoubleOrNull()?.let { it > 0 } == true
 
                 Button(
                     onClick = {
                         val newBudget = budgetInput.toDoubleOrNull()!!
-                        val updatedPlan = plan.copy(budgetAmount = newBudget)
-                        viewModel.updatePlan(updatedPlan)
+                        viewModel.updatePlan(plan.copy(budgetAmount = newBudget))
                         Toast.makeText(context, "Cập nhật thành công!", Toast.LENGTH_SHORT).show()
                         isEditing = false
                     },
                     enabled = isValid,
-                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
                     shape = RoundedCornerShape(16.dp)
                 ) {
                     Text("LƯU THAY ĐỔI", fontSize = 18.sp)
                 }
             }
         }
-
-        ) { padding ->
+    ) { padding ->
 
         if (plan == null) {
             Box(
@@ -235,25 +252,25 @@ fun PlanDetailScreen(
         val remaining = (plan.budgetAmount - plan.usedAmount).coerceAtLeast(0.0)
         val progress =
             if (plan.budgetAmount == 0.0) 0f else (plan.usedAmount / plan.budgetAmount).toFloat()
-        val animatedProgress by animateFloatAsState(targetValue = progress)
+
+        val animatedProgress by animateFloatAsState(progress)
 
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(Color(0xFFF7F9FC), Color(0xFFB2FEFA))
-                    )
-                )
+                .background(gradient)
                 .padding(padding)
         ) {
+
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 16.dp)
-                    .verticalScroll(rememberScrollState()),
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
+
+                // Title
                 Text(
                     plan.title,
                     style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
@@ -263,8 +280,8 @@ fun PlanDetailScreen(
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(24.dp),
-                    elevation = CardDefaults.cardElevation(6.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F9FF))
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F9FF)),
+                    elevation = CardDefaults.cardElevation(6.dp)
                 ) {
                     Column(
                         modifier = Modifier.padding(20.dp),
@@ -310,7 +327,6 @@ fun PlanDetailScreen(
                                 if (filtered.count { it == '.' } <= 1) budgetInput = filtered
                             },
                             label = { Text("Ngân sách mới") },
-                            placeholder = { Text("Nhập số tiền") },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(16.dp)
@@ -318,15 +334,15 @@ fun PlanDetailScreen(
                     }
                 }
 
-                // Monthly Expense Analysis
-                val dailyExpenses =
-                    remember(plan, uiState.transactions) {
-                        getDailyExpensesForPlan(
-                            plan,
-                            uiState.transactions
-                        )
-                    }
-                if (dailyExpenses.isNotEmpty()) MonthlyExpenseChart(dailyExpenses)
+                // Expense Chart
+                val dailyExpenses = remember(plan, uiState.transactions) {
+                    getDailyExpensesForPlan(plan, uiState.transactions)
+                }
+
+                if (dailyExpenses.isNotEmpty()) {
+                    MonthlyExpenseChart(dailyExpenses)
+                }
             }
         }
-    }}
+    }
+}

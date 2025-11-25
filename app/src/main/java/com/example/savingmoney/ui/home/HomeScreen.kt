@@ -38,25 +38,28 @@ import com.example.savingmoney.data.model.Transaction
 import com.example.savingmoney.data.model.TransactionType
 import com.example.savingmoney.ui.components.BottomNavigationBar
 import com.example.savingmoney.ui.navigation.Destinations
+import com.example.savingmoney.ui.settings.SettingsViewModel
+import com.example.savingmoney.ui.theme.BackgroundGradients
 import com.example.savingmoney.utils.FormatUtils.formatCurrency
 
 @Composable
 fun HomeScreen(
     onNavigateTo: (String) -> Unit,
     onNavigateToProfile: () -> Unit,
-    viewModel: HomeViewModel = hiltViewModel()
+
+    viewModel: HomeViewModel = hiltViewModel(),
+            settingsViewModel: SettingsViewModel = hiltViewModel() // thêm viewModel cho gradient
+
 ) {
     val uiState by viewModel.uiState.collectAsState()
-
+    val selectedBackgroundIndex by settingsViewModel.selectedBackgroundIndex.collectAsState()
+    val gradient = BackgroundGradients.getOrNull(selectedBackgroundIndex) ?: BackgroundGradients[0]
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(Color(0xFFF7F9FC), Color(0xFFB2FEFA))
-                )
-            )
-    ) {
+            .background(gradient) // thay chỗ cũ
+    )
+    {
         Scaffold(
             containerColor = Color.Transparent,
             modifier = Modifier.fillMaxSize(),

@@ -31,11 +31,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.filled.Brush
 import androidx.compose.material.icons.filled.BugReport
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Policy
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Support
@@ -78,6 +81,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.os.LocaleListCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.savingmoney.ui.components.BottomNavigationBar
+import com.example.savingmoney.ui.theme.BackgroundGradients
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -119,11 +123,13 @@ fun SettingsScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(
-                Brush.verticalGradient(
-                    colors = listOf(Color(0xFFF7F9FC), Color(0xFFB2FEFA))
-                )
+                uiState.selectedBackgroundIndex.let { index ->
+                    BackgroundGradients.getOrNull(index) ?: BackgroundGradients[0]
+                }
             )
-    ) {
+    )
+
+    {
         // Decorative circles
         Box(
             modifier = Modifier
@@ -288,25 +294,27 @@ fun GeneralSettingsSection(
     }
 
     SettingsGroup("Cài đặt chung", textColor) {
+        var showBackgroundDialog by remember { mutableStateOf(false) }
+
         SettingItem(
-            icon = Icons.Default.DarkMode,
-            title = "Chế độ tối",
+            icon = Icons.Default.Palette,
+            title = "Thay đổi hình nền",
             iconColor = Color(0xFF3F51B5),
             textColor = textColor,
-            trailingContent = {
-                Switch(
-                    checked = uiState.isDarkMode,
-                    onCheckedChange = viewModel::onDarkModeToggled,
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor = Color.White,
-                        checkedTrackColor = Color(0xFF005B96),
-                        uncheckedThumbColor = Color.White,
-                        uncheckedTrackColor = Color(0xFFE0E0E0)
-                    ),
-                    modifier = Modifier.scale(0.8f)
-                )
-            }
+            onClick = { showBackgroundDialog = true }
         )
+
+        if (showBackgroundDialog) {
+            BackgroundSelectionDialog(
+                selectedIndex = uiState.selectedBackgroundIndex,
+                onSelect = { index ->
+                    viewModel.onBackgroundSelected(index)
+                    showBackgroundDialog = false
+                },
+                onDismiss = { showBackgroundDialog = false }
+            )
+        }
+
         Divider(color = Color(0xFFF0F0F0), modifier = Modifier.padding(horizontal = 56.dp))
         SettingItem(
             icon = Icons.Default.Language,
@@ -338,7 +346,50 @@ fun GeneralSettingsSection(
         )
     }
 }
-
+@Composable
+fun BackgroundSelectionDialog(
+    selectedIndex: Int,
+    onSelect: (Int) -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Chọn hình nền", fontWeight = FontWeight.Bold) },
+        text = {
+            LazyColumn {
+                items(BackgroundGradients.size) { index ->
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(60.dp)
+                            .padding(vertical = 4.dp)
+                            .background(BackgroundGradients[index], RoundedCornerShape(12.dp))
+                            .clickable { onSelect(index) },
+                        contentAlignment = Alignment.CenterEnd // hiển thị tick ở bên phải
+                    ) {
+                        if (index == selectedIndex) {
+                            Icon(
+                                imageVector = Icons.Default.Check,
+                                contentDescription = "Selected",
+                                tint = Color(0xFF388E3C),
+                                modifier = Modifier
+                                    .padding(end = 16.dp)
+                                    .size(24.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Đóng", color = Color.Gray)
+            }
+        },
+        shape = RoundedCornerShape(16.dp),
+        containerColor = Color.White
+    )
+}
 @Composable
 fun AboutSection(
     onLogout: () -> Unit,

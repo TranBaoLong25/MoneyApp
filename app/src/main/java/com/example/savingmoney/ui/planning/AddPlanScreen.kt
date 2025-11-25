@@ -35,6 +35,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.savingmoney.data.model.Category
 import com.example.savingmoney.data.model.Plan
+import com.example.savingmoney.ui.settings.SettingsViewModel
+import com.example.savingmoney.ui.theme.BackgroundGradients
 import com.example.savingmoney.utils.FormatUtils
 import java.text.DecimalFormat
 import java.util.Locale
@@ -43,6 +45,7 @@ import java.util.Locale
 @Composable
 fun AddPlanScreen(
     viewModel: PlanViewModel = hiltViewModel(),
+    settingsViewModel: SettingsViewModel = hiltViewModel(), // thêm dòng này
     onNavigateUp: () -> Unit,
     onPlanAdded: () -> Unit
 ) {
@@ -51,6 +54,8 @@ fun AddPlanScreen(
 
     var selectedCategory by remember { mutableStateOf<Category?>(null) }
     var budgetInput by remember { mutableStateOf("") }
+    val selectedBackgroundIndex by settingsViewModel.selectedBackgroundIndex.collectAsState()
+    val gradient = BackgroundGradients.getOrNull(selectedBackgroundIndex) ?: BackgroundGradients[0]
 
     Scaffold(
         containerColor = Color.Transparent,
@@ -114,13 +119,10 @@ fun AddPlanScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(Color(0xFFF7F9FC), Color(0xFFB2FEFA))
-                    )
-                )
+                .background(gradient)
                 .padding(paddingValues)
-        ) {
+        )
+        {
             Column(
                 modifier = Modifier
                     .fillMaxSize()

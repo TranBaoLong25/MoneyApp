@@ -73,7 +73,7 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            SavingMoneyTheme(darkTheme = settingsUiState.isDarkMode) {
+            SavingMoneyTheme() {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background

@@ -36,6 +36,8 @@ import com.example.savingmoney.data.model.TransactionType
 import com.example.savingmoney.ui.components.BottomNavigationBar
 import com.example.savingmoney.ui.home.TransactionRow
 import com.example.savingmoney.ui.navigation.Destinations
+import com.example.savingmoney.ui.settings.SettingsViewModel
+import com.example.savingmoney.ui.theme.BackgroundGradients
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -44,21 +46,20 @@ import java.util.Locale
 @Composable
 fun TransactionListScreen(
     onNavigateTo: (String) -> Unit,
+    settingsViewModel: SettingsViewModel = hiltViewModel(), // thêm dòng này
+
     viewModel: TransactionViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     // ✅ Gom nhóm trực tiếp từ uiState
     val groupedTransactions = uiState.transactions.groupBy { it.date.toFormattedDateString() }
-
+    val selectedBackgroundIndex by settingsViewModel.selectedBackgroundIndex.collectAsState()
+    val gradient = BackgroundGradients.getOrNull(selectedBackgroundIndex) ?: BackgroundGradients[0]
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(Color(0xFFF7F9FC), Color(0xFFB2FEFA))
-                )
-            )
-    ) {
+            .background(gradient) // dùng gradient động
+    )  {
         Scaffold(
             topBar = {
                 TopAppBar(

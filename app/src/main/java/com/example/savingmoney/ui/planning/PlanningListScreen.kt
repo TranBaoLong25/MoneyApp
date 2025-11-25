@@ -35,6 +35,8 @@ import com.example.savingmoney.data.model.Plan
 import com.example.savingmoney.data.model.TransactionType
 import com.example.savingmoney.ui.components.BottomNavigationBar
 import com.example.savingmoney.ui.home.AutoResizeText
+import com.example.savingmoney.ui.settings.SettingsViewModel
+import com.example.savingmoney.ui.theme.BackgroundGradients
 import com.example.savingmoney.utils.FormatUtils
 
 @Composable
@@ -42,18 +44,19 @@ fun PlanningListScreen(
     currentRoute: String,
     onNavigate: (String) -> Unit,
     viewModel: PlanViewModel = hiltViewModel(),
+    settingsViewModel: SettingsViewModel = hiltViewModel(), // thêm viewModel cho gradient
     onAddPlan: () -> Unit = {},
     onPlanClick: (Plan) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val expenseByCategory by viewModel.expenseByCategory.collectAsState()
     val expenseCategories by viewModel.expenseCategories.collectAsState()
+    val selectedBackgroundIndex by settingsViewModel.selectedBackgroundIndex.collectAsState()
 
     val columnState = rememberLazyListState()
 
     // Animation state for pie chart
     val animateRotation = remember { Animatable(0f) }
-
     LaunchedEffect(key1 = true) {
         animateRotation.animateTo(
             targetValue = 1f,
@@ -61,14 +64,13 @@ fun PlanningListScreen(
         )
     }
 
+    // Gradient động
+    val gradient = BackgroundGradients.getOrNull(selectedBackgroundIndex) ?: BackgroundGradients[0]
+
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(Color(0xFFF7F9FC), Color(0xFFB2FEFA))
-                )
-            )
+            .background(gradient) // dùng gradient động
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             // Header
@@ -129,6 +131,8 @@ fun PlanningListScreen(
     }
 }
 
+// -------------------- Các composable còn lại giữ nguyên --------------------
+
 @Composable
 fun OverviewCard(income: Double, expense: Double) {
     val netBalance = income - expense
@@ -183,7 +187,6 @@ fun OverviewItem(label: String, amount: Double, color: Color) {
         )
     }
 }
-
 @Composable
 fun SpendAnalysisCard(
     expenseByCategory: List<Pair<Category, Double>>,

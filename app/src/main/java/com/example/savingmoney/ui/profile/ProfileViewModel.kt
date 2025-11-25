@@ -56,22 +56,41 @@ class ProfileViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             try {
                 val user = firebaseAuth.currentUser ?: throw IllegalStateException("User not logged in")
-                val storageRef = firebaseStorage.reference.child("profile_pictures/${user.uid}")
+                // 1. Lấy URL ảnh cũ để xóa sau khi tải lên thành công (nếu có)
+                val oldPhotoUrl = uiState.value.photoUrl
 
-                storageRef.putFile(uri).await()
-                val downloadUrl = storageRef.downloadUrl.await()
+                // 2. Tạo tên file duy nhất cho ảnh mới
+                val fileName = "${user.uid}_${System.currentTimeMillis()}.jpg"
+                val newStorageRef = firebaseStorage.reference.child("profile_pictures/$fileName")
 
+                // 3. Tải ảnh mới lên
+                newStorageRef.putFile(uri).await()
+                val downloadUrl = newStorageRef.downloadUrl.await()
+
+                // 4. Cập nhật profile người dùng với URL mới
                 val profileUpdates = UserProfileChangeRequest.Builder()
                     .setPhotoUri(downloadUrl)
                     .build()
                 user.updateProfile(profileUpdates).await()
 
+                // 5. Cập nhật UI state với thông tin mới
                 _uiState.update {
                     it.copy(
                         isLoading = false,
                         photoUrl = downloadUrl.toString(),
                         successMessage = "Cập nhật ảnh đại diện thành công!"
                     )
+                }
+
+                // 6. Xóa ảnh cũ đi (bước này không bắt buộc nhưng nên có để tiết kiệm dung lượng)
+                if (!oldPhotoUrl.isNullOrEmpty()) {
+                    try {
+                        val oldStorageRef = firebaseStorage.getReferenceFromUrl(oldPhotoUrl)
+                        oldStorageRef.delete().await()
+                    } catch (e: Exception) {
+                        // Bỏ qua nếu không xóa được ảnh cũ, vì ảnh mới đã được cập nhật thành công
+                        println("Failed to delete old profile picture: ${e.message}")
+                    }
                 }
 
             } catch (e: Exception) {
@@ -124,23 +143,57 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
+    // Trong ProfileViewModel.kt
+
     fun updateEmail(password: String, newEmail: String) {
         viewModelScope.launch {
+            // Kiểm tra đầu vào cơ bản
+            if (newEmail.isBlank() || !android.util.Patterns.EMAIL_ADDRESS.matcher(newEmail).matches()) {
+                _uiState.update { it.copy(errorMessage = "Vui lòng nhập một địa chỉ email hợp lệ.") }
+                return@launch
+            }
+            if (password.isBlank()) {
+                _uiState.update { it.copy(errorMessage = "Vui lòng nhập mật khẩu hiện tại.") }
+                return@launch
+            }
+
             _uiState.update { it.copy(isLoading = true, errorMessage = null, successMessage = null) }
             try {
                 val user = firebaseAuth.currentUser!!
                 val credential = EmailAuthProvider.getCredential(user.email!!, password)
 
+                // Bước 1: Yêu cầu người dùng xác thực lại
                 user.reauthenticate(credential).await()
-                user.updateEmail(newEmail).await()
 
-                _uiState.update { it.copy(isLoading = false, email = newEmail, successMessage = "Cập nhật email thành công!") }
+                // Bước 2: Gửi email xác thực đến địa chỉ email mới (thay vì đổi trực tiếp)
+                user.verifyBeforeUpdateEmail(newEmail).await()
+
+                // Bước 3: Thông báo cho người dùng kiểm tra email, không cập nhật UI ngay
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        successMessage = "Đã gửi email xác nhận. Vui lòng kiểm tra hộp thư đến của bạn để hoàn tất thay đổi."
+                    )
+                }
 
             } catch (e: Exception) {
-                _uiState.update { it.copy(isLoading = false, errorMessage = e.localizedMessage ?: "Cập nhật email thất bại.") }
+                // Xử lý các lỗi phổ biến
+                val errorMessage = when (e) {
+                    is com.google.firebase.auth.FirebaseAuthInvalidCredentialsException -> "Mật khẩu không đúng. Vui lòng thử lại."
+                    is com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException -> "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại."
+                    is com.google.firebase.auth.FirebaseAuthUserCollisionException -> "Địa chỉ email này đã được sử dụng bởi tài khoản khác."
+                    else -> e.localizedMessage ?: "Cập nhật email thất bại. Vui lòng thử lại."
+                }
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = errorMessage
+                    )
+                }
             }
         }
     }
+
 
     fun updatePhoneNumber(phone: String) {
         viewModelScope.launch {
@@ -155,7 +208,7 @@ class ProfileViewModel @Inject constructor(
                         successMessage = "Cập nhật số điện thoại thành công!"
                     )
                 }
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 _uiState.update { it.copy(isLoading = false, errorMessage = "Cập nhật thất bại.") }
             }
         }

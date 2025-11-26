@@ -78,7 +78,7 @@ class PlanViewModel @Inject constructor(
 
             val totalIncome = transactions.filter { it.type == TransactionType.INCOME }.sumOf { it.amount }
             val totalExpense = transactions.filter { it.type == TransactionType.EXPENSE }.sumOf { it.amount }
-            val tip = if (totalExpense > totalIncome) "Tiêu xài quá đà!" else "Chi tiêu ổn định"
+            val tip = if (totalExpense > totalIncome) "Tiêu xài quá đà, lập kế hoạch ngay!" else "Chi tiêu ổn định, tiếp tục duy trì!"
 
             PlanningUiState(
                 plans = updatedPlans,
@@ -115,23 +115,14 @@ class PlanViewModel @Inject constructor(
     fun addPlan(plan: Plan, onError: (String) -> Unit = {}) {
         viewModelScope.launch {
             try {
-                val transactions = transactionRepository.getAllTransactionsOnce()
-                val balance = transactions.filter { it.type == TransactionType.INCOME }.sumOf { it.amount } -
-                        transactions.filter { it.type == TransactionType.EXPENSE }.sumOf { it.amount }
-
-                val totalBudget = if (plan.categoryBudgets.isNotEmpty()) plan.categoryBudgets.values.sum() else plan.budgetAmount
-
-                if (totalBudget <= balance) {
-                    planRepository.addPlan(plan)
-                    onError("")
-                } else {
-                    onError("Ngân sách không đủ để tạo kế hoạch này")
-                }
+                planRepository.addPlan(plan)
+                onError("") // nếu muốn reset lỗi hoặc báo thành công
             } catch (e: Exception) {
                 onError("Lỗi khi thêm kế hoạch: ${e.message}")
             }
         }
     }
+
 
     fun updatePlan(plan: Plan) = viewModelScope.launch { planRepository.updatePlan(plan) }
     fun deletePlan(planId: String) = viewModelScope.launch { planRepository.deletePlan(planId) }

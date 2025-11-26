@@ -56,16 +56,16 @@ fun RegisterScreen(
         .build()
     val googleSignInClient = GoogleSignIn.getClient(context, gso)
 
+    // FIXED: Không dùng getResult(Exception::class.java)
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
-        try {
-            val account = task.getResult(Exception::class.java)
-            account?.idToken?.let { idToken ->
-                authViewModel.signInWithGoogle(idToken)
-            }
-        } catch (e: Exception) {
-            Log.e("RegisterScreen", "Google Sign-In Failed", e)
+
+        val account = task.result
+        if (account != null) {
+            authViewModel.signInWithGoogle(account.idToken!!)
+        } else {
             localError = "Đăng nhập Google thất bại!"
+            Log.e("RegisterScreen", "Google Sign-In Error", task.exception)
         }
     }
 
@@ -100,7 +100,6 @@ fun RegisterScreen(
                         .border(BorderStroke(1.dp, Color.White.copy(alpha = 0.2f)), RoundedCornerShape(24.dp))
                         .padding(24.dp)
                 ) {
-                    // Email
                     OutlinedTextField(
                         value = email,
                         onValueChange = { email = it },
@@ -112,7 +111,6 @@ fun RegisterScreen(
                     )
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Password
                     OutlinedTextField(
                         value = password,
                         onValueChange = { password = it },
@@ -123,7 +121,7 @@ fun RegisterScreen(
                             IconButton(onClick = { passwordVisible = !passwordVisible }) {
                                 Icon(
                                     if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
-                                    "Toggle password visibility",
+                                    "Toggle password",
                                     tint = Color.White.copy(alpha = 0.7f)
                                 )
                             }
@@ -134,7 +132,6 @@ fun RegisterScreen(
                     )
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    // Nút đăng ký Email với kiểm tra trống
                     if (uiState.isLoading) {
                         CircularProgressIndicator(color = Color.White)
                     } else {
@@ -142,92 +139,51 @@ fun RegisterScreen(
                             onClick = {
                                 localError = null
                                 when {
-                                    email.isBlank() && password.isBlank() -> {
-                                        localError = "Email và Mật khẩu không được để trống"
-                                        return@Button
-                                    }
-
-                                    email.isBlank() -> {
-                                        localError = "Email không được để trống"
-                                        return@Button
-                                    }
-
-                                    password.isBlank() -> {
-                                        localError = "Mật khẩu không được để trống"
-                                        return@Button
-                                    }
-
-                                    else -> {
-                                        authViewModel.signUpWithEmail(email, password)
-                                    }
+                                    email.isBlank() && password.isBlank() -> localError = "Email và Mật khẩu không được để trống"
+                                    email.isBlank() -> localError = "Email không được để trống"
+                                    password.isBlank() -> localError = "Mật khẩu không được để trống"
+                                    else -> authViewModel.signUpWithEmail(email, password)
                                 }
                             },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .shadow(8.dp, RoundedCornerShape(16.dp)),
+                            modifier = Modifier.fillMaxWidth().shadow(8.dp, RoundedCornerShape(16.dp)),
                             shape = RoundedCornerShape(16.dp),
                             contentPadding = PaddingValues(vertical = 16.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = Color.White)
                         ) {
-                            Text(
-                                "TẠO TÀI KHOẢN",
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary
-                            )
+                            Text("TẠO TÀI KHOẢN", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                         }
 
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        // Nút Google Sign-In
                         Button(
                             onClick = { launcher.launch(googleSignInClient.signInIntent) },
                             colors = ButtonDefaults.buttonColors(containerColor = Color.White),
                             shape = RoundedCornerShape(16.dp),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .shadow(4.dp, RoundedCornerShape(16.dp))
+                            modifier = Modifier.fillMaxWidth().shadow(4.dp, RoundedCornerShape(16.dp))
                         ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Center,
-                                modifier = Modifier.fillMaxWidth()
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.Center
                             ) {
-                                Image(
-                                    painter = painterResource(id = R.drawable.gg),
-                                    contentDescription = "Google",
-                                    modifier = Modifier.size(24.dp)
-                                )
+                                Image(painter = painterResource(id = R.drawable.gg), contentDescription = null, modifier = Modifier.size(24.dp))
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    "Đăng nhập bằng Google",
-                                    color = Color.Black,
-                                    fontWeight = FontWeight.Bold
-                                )
+                                Text("Đăng ký nhanh bằng Google", color = Color.Black, fontWeight = FontWeight.Bold)
                             }
                         }
                     }
 
-                        Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
 
-                    // Thông báo lỗi / thành công
-                    localError?.let {
-                        Text(it, color = Color(0xFFFFC107))
-                    }
-                    uiState.error?.let {
-                        Text(it, color = MaterialTheme.colorScheme.error)
-                    }
-                    if (uiState.isRegistered) {
-                        Text("Đăng ký thành công! Vui lòng đăng nhập.", color = Color(0xFF2E7D32))
-                    }
+                    localError?.let { Text(it, color = Color(0xFFFFC107)) }
+                    uiState.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                    if (uiState.isRegistered) Text("Đăng ký thành công! Vui lòng đăng nhập.", color = Color(0xFF2E7D32))
                 }
             }
 
             item {
                 Spacer(modifier = Modifier.height(64.dp))
-                Row(
-                    modifier = Modifier.padding(bottom = 32.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+                Row(modifier = Modifier.padding(bottom = 32.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text("Đã có tài khoản?", color = Color.White.copy(alpha = 0.7f))
                     TextButton(onClick = onNavigateToLogin) {
                         Text("Đăng nhập", color = Color.White, fontWeight = FontWeight.Bold)
